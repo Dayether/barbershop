@@ -1,0 +1,537 @@
+/* Enhanced Professional Footer Styles for Tipuno Barbershop */
+
+.footer {
+    background-color: var(--secondary-color);
+    color: var(--text-light);
+    position: relative;
+    font-family: var(--font-body);
+}
+
+/* Pattern overlay for premium look */
+.footer-pattern {
+    height: 15px;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--primary-color-dark),
+        var(--primary-color-dark) 5px,
+        var(--primary-color) 5px,
+        var(--primary-color) 10px
+    );
+    opacity: 0.7;
+}
+
+.footer a {
+    color: var(--text-light);
+    transition: color 0.3s ease, transform 0.2s ease;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: var(--primary-color);
+}
+
+.footer-top {
+    padding: var(--space-xl) 0;
+    background-image: 
+        linear-gradient(to bottom, rgba(29, 26, 22, 0.98), rgba(29, 26, 22, 0.98)),
+        url('../images/footer-texture.jpg');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+}
+
+/* Brand section */
+.footer-brand {
+    margin-bottom: var(--space-lg);
+}
+
+.footer-logo-img {
+    height: 65px;
+    margin-bottom: var(--space-md);
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+}
+
+.brand-description {
+    line-height: 1.7;
+    margin-bottom: var(--space-md);
+    color: var(--text-light);
+    opacity: 0.9;
+}
+
+.follow-title {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Footer Headings */
+.footer h4 {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    margin-bottom: var(--space-sm);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.footer h5 {
+    color: var(--primary-color);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+/* Gold Divider Line */
+.footer .gold-divider {
+    height: 2px;
+    width: 50px;
+    background: var(--gold-gradient);
+    margin: 12px 0;
+    transition: width 0.3s ease;
+}
+
+.footer-brand:hover .gold-divider,
+.footer-navigation:hover .gold-divider,
+.footer-contact:hover .gold-divider,
+.footer-hours:hover .gold-divider {
+    width: 70px;
+}
+
+/* Social Icons */
+.social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: var(--space-sm);
+}
+
+.social-icon-gold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: rgba(200, 166, 86, 0.1);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color) !important;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.social-icon-gold:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(200, 166, 86, 0.2);
+    transition: left 0.3s ease;
+}
+
+.social-icon-gold:hover {
+    background-color: var(--primary-color);
+    color: var(--secondary-color) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.social-icon-gold:hover:before {
+    left: 100%;
+}
+
+/* Navigation Links */
+.footer-links-columns {
+    display: flex;
+    gap: 30px;
+}
+
+.footer-links-column {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links-column li {
+    margin-bottom: 10px;
+}
+
+.footer-link {
+    display: inline-block;
+    padding: 4px 0;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.footer-link i {
+    font-size: 0.7rem;
+    margin-right: 5px;
+    opacity: 0.7;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.footer-link:hover {
+    transform: translateX(3px);
+}
+
+.footer-link:hover i {
+    opacity: 1;
+    transform: translateX(2px);
+    color: var(--primary-color);
+}
+
+/* Contact Items */
+.contact-item {
+    display: flex;
+    margin-bottom: var(--space-md);
+    align-items: flex-start;
+    transition: transform 0.2s ease;
+}
+
+.contact-item:hover {
+    transform: translateX(3px);
+}
+
+.contact-icon {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-right: 15px;
+    margin-top: 5px;
+}
+
+.footer-contact address {
+    margin-bottom: 5px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-style: normal;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.contact-link {
+    color: var(--text-light);
+    opacity: 0.9;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.contact-link:hover {
+    color: var(--primary-color);
+    opacity: 1;
+}
+
+/* Business Hours */
+.hours-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hours-item {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.hours-item:last-of-type {
+    border-bottom: none;
+    margin-bottom: 15px;
+}
+
+.hours-item .day {
+    color: var(--text-light);
+}
+
+.hours-item .time {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.book-cta {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* Newsletter Bar */
+.newsletter-bar {
+    background: linear-gradient(to right, rgba(29, 26, 22, 0.95), rgba(29, 26, 22, 0.85)), 
+                url('../images/pattern-bg.jpg') center/cover no-repeat;
+    padding: var(--space-lg) 0;
+    position: relative;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.newsletter-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.newsletter-text {
+    flex: 1;
+    min-width: 250px;
+}
+
+.newsletter-text h4 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.newsletter-text p {
+    margin-bottom: 0;
+    color: var(--text-light);
+    opacity: 0.9;
+}
+
+.newsletter-form {
+    flex: 1;
+    min-width: 300px;
+    position: relative;
+}
+
+.newsletter-input-group {
+    display: flex;
+    max-width: 500px;
+    margin-left: auto;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.newsletter-input-group input {
+    flex: 1;
+    height: 50px;
+    padding: 10px 20px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    border-radius: 4px 0 0 4px;
+    transition: background-color 0.3s ease;
+}
+
+.newsletter-input-group input:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 0 2px rgba(200, 166, 86, 0.3);
+}
+
+.newsletter-input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-newsletter {
+    height: 50px;
+    padding: 0 20px;
+    border: none;
+    background: var(--gold-gradient);
+    color: var(--secondary-color);
+    font-weight: 600;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-newsletter:hover {
+    background: var(--primary-color);
+    transform: translateX(3px);
+}
+
+.form-response {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    text-align: right;
+    padding-top: 5px;
+    font-size: 0.9rem;
+}
+
+.form-response.success {
+    color: var(--primary-color);
+}
+
+.form-response.error {
+    color: #e74c3c;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: var(--space-md) 0;
+}
+
+.footer-bottom-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.copyright p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    opacity: 0.7;
+}
+
+.footer-legal {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-legal a {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    opacity: 0.7;
+    transition: opacity 0.3s ease, color 0.3s ease;
+    position: relative;
+}
+
+.footer-legal a:hover {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+.footer-legal a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 1px;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.footer-legal a:hover::after {
+    width: 100%;
+}
+
+/* Back To Top Button */
+.back-to-top {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 45px;
+    height: 45px;
+    background: var(--gold-gradient);
+    color: var(--secondary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-5px);
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .footer-content {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+    }
+    
+    .newsletter-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .newsletter-text {
+        margin-bottom: var(--space-sm);
+    }
+    
+    .newsletter-form, .newsletter-input-group {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
+    }
+    
+    .footer-links-columns {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .hours-item {
+        font-size: 0.9rem;
+    }
+    
+    .footer-bottom-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .footer-legal {
+        justify-content: center;
+    }
+    
+    .social-icons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .footer-links-columns {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .footer-legal {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .newsletter-input-group {
+        flex-direction: column;
+    }
+    
+    .newsletter-input-group input {
+        border-radius: 4px 4px 0 0;
+    }
+    
+    .btn-newsletter {
+        width: 100%;
+        border-radius: 0 0 4px 4px;
+    }
+}

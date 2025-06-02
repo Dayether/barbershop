@@ -1,0 +1,774 @@
+[2025-05-11 17:41:16] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 17:41:16] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 17:41:16] Saved cart to session: 1 items
+[2025-05-11 17:41:21] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 17:41:21] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 17:41:21] Saved cart to session: 1 items
+[2025-05-11 17:41:23] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 17:41:23] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 17:41:23] Saved cart to session: 1 items
+[2025-05-11 17:41:24] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 17:41:24] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 17:41:24] Saved cart to session: 1 items
+[2025-05-11 18:48:59] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 18:48:59] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 18:48:59] Saved cart to session: 1 items
+[2025-05-11 18:49:48] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 18:49:48] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 18:49:48] Saved cart to session: 1 items
+[2025-05-11 18:49:54] Received data: {"cart":[{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-11 18:49:54] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-11 18:49:54] Saved cart to session: 1 items
+[2025-05-13 09:27:14] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1}]}
+[2025-05-13 09:27:14] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:27:14] Saved cart to session: 1 items
+[2025-05-13 09:27:40] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:27:40] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:27:40] Saved cart to session: 2 items
+[2025-05-13 09:28:07] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:28:07] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:28:07] Saved cart to session: 2 items
+[2025-05-13 09:30:01] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:30:01] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:30:01] Saved cart to session: 2 items
+[2025-05-13 09:30:03] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:30:03] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:30:03] Saved cart to session: 2 items
+[2025-05-13 09:36:02] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:36:02] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 2
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:36:02] Saved cart to session: 2 items
+[2025-05-13 09:37:35] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:37:35] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 2
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:37:35] Saved cart to session: 2 items
+[2025-05-13 09:37:57] Received data: {"cart":[{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 09:37:57] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 2
+                )
+
+            [1] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 09:37:57] Saved cart to session: 2 items
+[2025-05-13 17:36:45] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":1}]}
+[2025-05-13 17:36:45] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 17:36:45] Saved cart to session: 1 items
+[2025-05-13 17:42:58] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":2}]}
+[2025-05-13 17:42:58] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-13 17:42:58] Saved cart to session: 1 items
+[2025-05-13 17:46:26] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3}]}
+[2025-05-13 17:46:26] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 3
+                )
+
+        )
+
+)
+
+[2025-05-13 17:46:26] Saved cart to session: 1 items
+[2025-05-13 18:42:59] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1}]}
+[2025-05-13 18:42:59] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 3
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 18:42:59] Saved cart to session: 2 items
+[2025-05-13 19:32:18] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-13 19:32:18] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 3
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-13 19:32:18] Saved cart to session: 3 items
+[2025-05-15 06:06:49] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]}
+[2025-05-15 06:06:49] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 3
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-15 06:06:49] Saved cart to session: 4 items
+[2025-05-28 14:02:44] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":2},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]}
+[2025-05-28 14:02:44] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 3
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 2
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-28 14:02:44] Saved cart to session: 4 items
+[2025-05-28 14:03:17] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":4},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":2},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]}
+[2025-05-28 14:03:17] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 4
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 2
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-28 14:03:17] Saved cart to session: 4 items
+[2025-05-28 18:34:53] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":5},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":3},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]}
+[2025-05-28 18:34:53] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 5
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 2
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 3
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-28 18:34:53] Saved cart to session: 4 items
+[2025-05-28 18:36:52] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":5},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":4},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]}
+[2025-05-28 18:36:52] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 5
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 2
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 4
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-05-28 18:36:52] Saved cart to session: 4 items
+[2025-05-28 18:37:29] Received data: {"cart":[{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":1},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2},{"id":"4","name":"Beard Balm","price":20,"image":"uploads/products/beard-balm.jpg","quantity":1}]}
+[2025-05-28 18:37:29] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 2
+                    [name] => Beard Oil
+                    [price] => 18
+                    [image] => uploads/products/beard-oil.jpg
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [id] => 3
+                    [name] => Matte Clay
+                    [price] => 24
+                    [image] => uploads/products/matte-clay.jpg
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+            [3] => Array
+                (
+                    [id] => 6
+                    [name] => Shaving Cream
+                    [price] => 12
+                    [image] => uploads/products/shaving-cream.jpg
+                    [quantity] => 2
+                )
+
+            [4] => Array
+                (
+                    [id] => 4
+                    [name] => Beard Balm
+                    [price] => 20
+                    [image] => uploads/products/beard-balm.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-28 18:37:29] Saved cart to session: 5 items
+[2025-05-30 08:27:59] Received data: {"cart":[{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]}
+[2025-05-30 08:27:59] Decoded data: Array
+(
+    [cart] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 1
+                    [name] => Premium Pomade
+                    [price] => 22
+                    [image] => uploads/products/pomade.jpg
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-05-30 08:27:59] Saved cart to session: 1 items

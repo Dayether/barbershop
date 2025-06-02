@@ -1,0 +1,42 @@
+:root {
+    /* Colors */
+    --primary-color: #4C84FF;
+    --secondary-color: #43CF7C;
+    --danger-color: #FF6B6B;
+    --warning-color: #FFBA08;
+    --info-color: #00CFE8;
+    --success-color: #43CF7C;
+    --purple-color: #A162F7;
+    
+    /* RGB versions for opacity */
+    --primary-color-rgb: 76, 132, 255;
+    --secondary-color-rgb: 67, 207, 124;
+    --danger-color-rgb: 255, 107, 107;
+    --warning-color-rgb: 255, 186, 8;
+    
+    /* Typography */
+    --font-family-sans-serif: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* Shadows */
+    --shadow-small: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+    --shadow-regular: 0 4px 24px 0 rgba(34, 41, 47, 0.1);
+    --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.12);
+    
+    /* Border radius */
+    --border-radius-small: 4px;
+    --border-radius-medium: 8px;
+    --border-radius-large: 12px;
+    --border-radius-pill: 50px;
+    --border-radius-circle: 50%;
+    
+    /* Transitions */
+    --transition-fast: all 0.2s ease;
+    --transition-default: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
+}

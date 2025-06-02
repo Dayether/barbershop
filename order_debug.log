@@ -1,0 +1,161 @@
+[2025-05-13 03:27:54] Database connection successful
+[2025-05-13 03:27:54] All required columns present in orders table
+[2025-05-13 03:27:54] Order form submitted with:
+[2025-05-13 03:27:54] Name: ivan alc
+[2025-05-13 03:27:54] Email: alcantaraivan2003@gmail.com
+[2025-05-13 03:27:54] Address: LIPA, LIPA CITY, 4217, AU
+[2025-05-13 03:27:54] Order total: 51
+[2025-05-13 03:27:54] Order items JSON: [{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 03:27:54] Successfully decoded order items: 2 items
+[2025-05-13 03:27:54] Transaction started successfully
+[2025-05-13 03:27:54] Order associated with user ID: 1
+[2025-05-13 03:27:54] Generated order reference: ORD-6822F47AE1A8
+[2025-05-13 03:27:54] Order created with ID: 6 and reference: ORD-6822F47AE1A8
+[2025-05-13 03:27:54] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-13 03:27:54] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 03:27:54] Order transaction committed successfully
+[2025-05-13 03:29:57] Database connection successful
+[2025-05-13 03:29:57] All required columns present in orders table
+[2025-05-13 03:29:57] Order form submitted with:
+[2025-05-13 03:29:57] Name: ivan alc
+[2025-05-13 03:29:57] Email: alcantaraivan2003@gmail.com
+[2025-05-13 03:29:57] Address: LIPA, LIPA CITY, 4217, AU
+[2025-05-13 03:29:57] Order total: 51
+[2025-05-13 03:29:57] Order items JSON: [{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 03:29:57] Successfully decoded order items: 2 items
+[2025-05-13 03:29:57] Transaction started successfully
+[2025-05-13 03:29:57] Order associated with user ID: 1
+[2025-05-13 03:29:57] Generated order reference: ORD-6822F4F5EA1A
+[2025-05-13 03:29:57] Order created with ID: 7 and reference: ORD-6822F4F5EA1A
+[2025-05-13 03:29:57] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-13 03:29:57] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 03:29:57] Order transaction committed successfully
+[2025-05-13 03:30:18] Database connection successful
+[2025-05-13 03:30:18] All required columns present in orders table
+[2025-05-13 03:30:18] Order form submitted with:
+[2025-05-13 03:30:18] Name: ivan alc
+[2025-05-13 03:30:18] Email: alcantaraivan2003@gmail.com
+[2025-05-13 03:30:18] Address: LIPA, LIPA CITY, 4217, CA
+[2025-05-13 03:30:18] Order total: 51
+[2025-05-13 03:30:18] Order items JSON: [{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 03:30:18] Successfully decoded order items: 2 items
+[2025-05-13 03:30:18] Transaction started successfully
+[2025-05-13 03:30:18] Order associated with user ID: 1
+[2025-05-13 03:30:18] Generated order reference: ORD-6822F50A8EEB
+[2025-05-13 03:30:18] Order created with ID: 8 and reference: ORD-6822F50A8EEB
+[2025-05-13 03:30:18] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-13 03:30:18] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 03:30:18] Order transaction committed successfully
+[2025-05-13 03:36:35] Database connection successful
+[2025-05-13 03:36:35] All required columns present in orders table
+[2025-05-13 03:36:35] Order form submitted with:
+[2025-05-13 03:36:35] Name: ivan alc
+[2025-05-13 03:36:35] Email: alcantaraivan2003@gmail.com
+[2025-05-13 03:36:35] Address: LIPA, LIPA CITY, 4217, AU
+[2025-05-13 03:36:35] Order total: 75
+[2025-05-13 03:36:35] Order items JSON: [{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 03:36:35] Successfully decoded order items: 2 items
+[2025-05-13 03:36:35] Transaction started successfully
+[2025-05-13 03:36:35] Order associated with user ID: 1
+[2025-05-13 03:36:35] Generated order reference: ORD-6822F68343AE
+[2025-05-13 03:36:35] Order created with ID: 9 and reference: ORD-6822F68343AE
+[2025-05-13 03:36:35] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 2
+[2025-05-13 03:36:35] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 03:36:35] Order transaction committed successfully
+[2025-05-13 03:38:37] Database connection successful
+[2025-05-13 03:38:37] All required columns present in orders table
+[2025-05-13 03:38:37] Order form submitted with:
+[2025-05-13 03:38:37] Name: ashley alc
+[2025-05-13 03:38:37] Email: alcantaraivan2003@gmail.com
+[2025-05-13 03:38:37] Address: bauan, batangas city, 4217, AU
+[2025-05-13 03:38:37] Order total: 75
+[2025-05-13 03:38:37] Order items JSON: [{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":2},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 03:38:37] Successfully decoded order items: 2 items
+[2025-05-13 03:38:37] Transaction started successfully
+[2025-05-13 03:38:37] Order associated with user ID: 1
+[2025-05-13 03:38:37] Generated order reference: ORD-6822F6FD74D0
+[2025-05-13 03:38:37] Order created with ID: 10 and reference: ORD-6822F6FD74D0
+[2025-05-13 03:38:37] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 2
+[2025-05-13 03:38:37] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 03:38:37] Order transaction committed successfully
+[2025-05-13 17:37:06] Database connection successful
+[2025-05-13 17:37:06] All required columns present in orders table
+[2025-05-13 17:37:06] Order form submitted with:
+[2025-05-13 17:37:06] Name: ivan alc
+[2025-05-13 17:37:06] Email: alcantaraivan2003@gmail.com
+[2025-05-13 17:37:06] Address: LIPA, LIPA CITY, 4217, AU
+[2025-05-13 17:37:06] Order total: 23
+[2025-05-13 17:37:06] Order items JSON: [{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":1}]
+[2025-05-13 17:37:06] Successfully decoded order items: 1 items
+[2025-05-13 17:37:06] Transaction started successfully
+[2025-05-13 17:37:06] Order associated with user ID: 1
+[2025-05-13 17:37:06] Generated order reference: ORD-682367222D9D
+[2025-05-13 17:37:06] Order created with ID: 11 and reference: ORD-682367222D9D
+[2025-05-13 17:37:06] Processing item: Product ID: 2, Name: Beard Oil, Price: 18, Quantity: 1
+[2025-05-13 17:37:06] Order transaction committed successfully
+[2025-05-13 17:46:38] Database connection successful
+[2025-05-13 17:46:38] All required columns present in orders table
+[2025-05-13 17:46:38] Order form submitted with:
+[2025-05-13 17:46:38] Name: ivan alc
+[2025-05-13 17:46:38] Email: alcantaraivan2003@gmail.com
+[2025-05-13 17:46:38] Address: LIPA, LIPA CITY, 4217, CA
+[2025-05-13 17:46:38] Order total: 59
+[2025-05-13 17:46:38] Order items JSON: [{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3}]
+[2025-05-13 17:46:38] Successfully decoded order items: 1 items
+[2025-05-13 17:46:38] Transaction started successfully
+[2025-05-13 17:46:38] Order associated with user ID: 1
+[2025-05-13 17:46:38] Generated order reference: ORD-6823695EBF84
+[2025-05-13 17:46:38] Order created with ID: 12 and reference: ORD-6823695EBF84
+[2025-05-13 17:46:38] Processing item: Product ID: 2, Name: Beard Oil, Price: 18, Quantity: 3
+[2025-05-13 17:46:38] Order transaction committed successfully
+[2025-05-13 18:43:15] Database connection successful
+[2025-05-13 18:43:15] All required columns present in orders table
+[2025-05-13 18:43:15] Order form submitted with:
+[2025-05-13 18:43:15] Name: ivan alc
+[2025-05-13 18:43:15] Email: alcantaraivan2003@gmail.com
+[2025-05-13 18:43:15] Address: LIPA, LIPA CITY, 4217, USA
+[2025-05-13 18:43:15] Order total: 83
+[2025-05-13 18:43:15] Order items JSON: [{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1}]
+[2025-05-13 18:43:15] Successfully decoded order items: 2 items
+[2025-05-13 18:43:15] Transaction started successfully
+[2025-05-13 18:43:15] Order associated with user ID: 1
+[2025-05-13 18:43:15] Generated order reference: ORD-682376A33C49
+[2025-05-13 18:43:15] Order created with ID: 13 and reference: ORD-682376A33C49
+[2025-05-13 18:43:15] Processing item: Product ID: 2, Name: Beard Oil, Price: 18, Quantity: 3
+[2025-05-13 18:43:15] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-13 18:43:15] Order transaction committed successfully
+[2025-05-13 19:32:33] Database connection successful
+[2025-05-13 19:32:33] All required columns present in orders table
+[2025-05-13 19:32:33] Order form submitted with:
+[2025-05-13 19:32:33] Name: ivan loop
+[2025-05-13 19:32:33] Email: alcantaraivan2003@gmail.com
+[2025-05-13 19:32:33] Address: LIPA, LIPA CITY, 4217, CA
+[2025-05-13 19:32:33] Order total: 105
+[2025-05-13 19:32:33] Order items JSON: [{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":1}]
+[2025-05-13 19:32:33] Successfully decoded order items: 3 items
+[2025-05-13 19:32:33] Transaction started successfully
+[2025-05-13 19:32:33] Order associated with user ID: 1
+[2025-05-13 19:32:33] Generated order reference: ORD-682382313A52
+[2025-05-13 19:32:33] Order created with ID: 14 and reference: ORD-682382313A52
+[2025-05-13 19:32:33] Processing item: Product ID: 2, Name: Beard Oil, Price: 18, Quantity: 3
+[2025-05-13 19:32:33] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-13 19:32:33] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 1
+[2025-05-13 19:32:33] Order transaction committed successfully
+[2025-05-28 14:03:04] Database connection successful
+[2025-05-28 14:03:04] All required columns present in orders table
+[2025-05-28 14:03:04] Order form submitted with:
+[2025-05-28 14:03:04] Name: abcde agno
+[2025-05-28 14:03:04] Email: abcde@gmail.com
+[2025-05-28 14:03:04] Address: LIPA, LIPA CITY, 4217, USA
+[2025-05-28 14:03:04] Order total: 151
+[2025-05-28 14:03:04] Order items JSON: [{"id":"2","name":"Beard Oil","price":18,"image":"uploads/products/beard-oil.jpg","quantity":3},{"id":"3","name":"Matte Clay","price":24,"image":"uploads/products/matte-clay.jpg","quantity":1},{"id":"1","name":"Premium Pomade","price":22,"image":"uploads/products/pomade.jpg","quantity":2},{"id":"6","name":"Shaving Cream","price":12,"image":"uploads/products/shaving-cream.jpg","quantity":2}]
+[2025-05-28 14:03:04] Successfully decoded order items: 4 items
+[2025-05-28 14:03:04] Transaction started successfully
+[2025-05-28 14:03:04] Order associated with user ID: 7
+[2025-05-28 14:03:04] Generated order reference: ORD-6836FB782BD7
+[2025-05-28 14:03:04] Order created with ID: 15 and reference: ORD-6836FB782BD7
+[2025-05-28 14:03:04] Processing item: Product ID: 2, Name: Beard Oil, Price: 18, Quantity: 3
+[2025-05-28 14:03:04] Processing item: Product ID: 3, Name: Matte Clay, Price: 24, Quantity: 1
+[2025-05-28 14:03:04] Processing item: Product ID: 1, Name: Premium Pomade, Price: 22, Quantity: 2
+[2025-05-28 14:03:04] Processing item: Product ID: 6, Name: Shaving Cream, Price: 12, Quantity: 2
+[2025-05-28 14:03:04] Order transaction committed successfully
