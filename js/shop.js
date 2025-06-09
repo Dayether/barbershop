@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     const productCards = document.querySelectorAll('.product-card');
     const sortDropdown = document.getElementById('sort-products');
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
     
     // Initialize product cards with proper display and opacity
     productCards.forEach(card => {
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const filterValue = this.getAttribute('data-filter');
             
             // Show/hide products based on filter with smooth animation
+            let visibleCount = 0;
             productCards.forEach(card => {
                 if (filterValue === 'all' || card.getAttribute('data-category') === filterValue) {
                     card.style.display = 'block';
@@ -35,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         card.style.opacity = '1';
                         card.style.transform = 'translateY(0)';
                     }, 10);
+                    visibleCount++;
                 } else {
                     card.style.opacity = '0';
                     card.style.transform = 'translateY(20px)';
@@ -45,7 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // Update product count
-            updateProductCount();
+            const countElement = document.querySelector('.product-count');
+            if (countElement) {
+                countElement.textContent = `Showing ${visibleCount} of ${productCards.length} products`;
+            }
         });
     });
     
@@ -111,202 +117,229 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Restore visual state
                 productGrid.style.opacity = '1';
                 document.body.style.cursor = 'default';
-                
-                // Update any display counters if needed
-                updateProductCount();
             }, 100);
         });
     }
     
-    // Function to update product count
-    function updateProductCount() {
-        const visibleProducts = Array.from(productCards).filter(card => 
-            card.style.display !== 'none'
-        ).length;
-        const totalProducts = productCards.length;
+    // Add to cart functionality
+    const addToCartButtons = document.querySelectorAll('.product-card .btn-add-to-cart');
+    
+    // Update cart in session
+    function updateCart(cart) {
+        localStorage.setItem('cart', JSON.stringify(cart));
         
-        // If you have a product count element, update it
-        const countElement = document.querySelector('.product-count');
-        if (countElement) {
-            countElement.textContent = `Showing ${visibleProducts} of ${totalProducts} products`;
-        }
+        // Send cart update to server
+        fetch('update_cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ cart: cart }),
+        });
     }
     
-    // Handle quick view button clicks
+    // Add to cart functionality with direct checkout option
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = parseInt(this.getAttribute('data-id'));
+            const productName = this.getAttribute('data-name');
+            const productPrice = parseFloat(this.getAttribute('data-price'));
+            const productImage = this.getAttribute('data-image');
+            
+            // Check if product already in cart
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    image: productImage,
+                    quantity: 1
+                });
+            }
+            
+            // Update cart
+            updateCart(cart);
+            
+            // Show success message
+            this.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
+            this.classList.add('added');
+            
+            // Create floating notification
+            const notification = document.createElement('div');
+            notification.classList.add('cart-notification');
+            notification.innerHTML = `
+                <div class="cart-notification-content">
+                    <i class="fas fa-check-circle"></i>
+                    <div class="notification-text">
+                        <p><strong>${productName}</strong> added to cart</p>
+                        <div class="notification-actions">
+                            <button class="notification-continue">Continue Shopping</button>
+                            <button class="notification-checkout">Checkout Now</button>
+                        </div>
+                    </div>
+                    <button class="notification-close">&times;</button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Handle notification buttons
+            notification.querySelector('.notification-continue').addEventListener('click', () => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            });
+            
+            notification.querySelector('.notification-checkout').addEventListener('click', () => {
+                window.location.href = 'checkout.php';
+            });
+            
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            });
+            
+            // Reset button after delay
+            setTimeout(() => {
+                this.innerHTML = 'Add to Cart';
+                this.classList.remove('added');
+            }, 2000);
+        });
+    });
+    
+    // Quick view functionality
     const quickViewButtons = document.querySelectorAll('.quick-view-btn');
+    
     quickViewButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             const productCard = this.closest('.product-card');
             const productName = productCard.querySelector('h3').textContent;
-            const productImage = productCard.querySelector('img').src;
             const productPrice = productCard.querySelector('.product-price').textContent;
-            const productDescription = productCard.querySelector('.product-description')?.textContent || 'No description available';
-            const productId = productCard.querySelector('.btn-add-to-cart')?.getAttribute('data-id');
+            const productDesc = productCard.querySelector('.product-description').textContent;
+            const productImage = productCard.querySelector('.product-image-wrapper img').src;
+            const addToCartBtn = productCard.querySelector('.btn-add-to-cart');
             
-            // Create and show modal
-            showProductQuickView(productName, productImage, productPrice, productDescription, productId);
-        });
-    });
-    
-    // Enhanced quick view modal function
-    function showProductQuickView(name, image, price, description, productId) {
-        // Create modal if it doesn't exist
-        let modal = document.getElementById('quick-view-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'quick-view-modal';
-            modal.className = 'quick-view-modal';
+            // Create modal
+            const modal = document.createElement('div');
+            modal.classList.add('quick-view-modal');
             modal.innerHTML = `
-                <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <div class="modal-body">
-                        <div class="product-quick-view">
-                            <div class="product-image">
-                                <img src="" alt="">
-                            </div>
-                            <div class="product-info">
-                                <h2 class="product-title"></h2>
-                                <div class="product-price"></div>
-                                <div class="product-description"></div>
-                                <div class="product-quantity">
-                                    <label for="qty">Quantity:</label>
-                                    <div class="quantity-selector">
-                                        <button type="button" class="qty-btn minus">-</button>
-                                        <input type="number" id="qty" name="qty" min="1" value="1">
-                                        <button type="button" class="qty-btn plus">+</button>
-                                    </div>
-                                </div>
-                                <button class="btn-add-to-cart">Add to Cart</button>
-                            </div>
-                        </div>
+                <div class="quick-view-content">
+                    <button class="close-modal">&times;</button>
+                    <div class="quick-view-image">
+                        <img src="${productImage}" alt="${productName}">
+                    </div>
+                    <div class="quick-view-details">
+                        <h2>${productName}</h2>
+                        <div class="quick-view-price">${productPrice}</div>
+                        <p>${productDesc}</p>
+                        <button class="btn-add-to-cart-modal" 
+                                data-id="${addToCartBtn.getAttribute('data-id')}"
+                                data-name="${addToCartBtn.getAttribute('data-name')}"
+                                data-price="${addToCartBtn.getAttribute('data-price')}"
+                                data-image="${addToCartBtn.getAttribute('data-image')}"
+                                ${addToCartBtn.hasAttribute('disabled') ? 'disabled' : ''}>
+                            ${addToCartBtn.textContent}
+                        </button>
                     </div>
                 </div>
             `;
+            
             document.body.appendChild(modal);
+            document.body.classList.add('modal-open');
             
-            // Add close functionality
-            modal.querySelector('.close-modal').addEventListener('click', function() {
-                modal.style.display = 'none';
-                document.body.classList.remove('modal-open');
-            });
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
             
-            // Close when clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
+            // Close modal
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.remove();
                     document.body.classList.remove('modal-open');
-                }
+                }, 300);
             });
             
-            // Quantity selector functionality
-            const qtyInput = modal.querySelector('#qty');
-            const minusBtn = modal.querySelector('.qty-btn.minus');
-            const plusBtn = modal.querySelector('.qty-btn.plus');
-            
-            minusBtn.addEventListener('click', function() {
-                const currentValue = parseInt(qtyInput.value);
-                if (currentValue > 1) {
-                    qtyInput.value = currentValue - 1;
-                }
-            });
-            
-            plusBtn.addEventListener('click', function() {
-                const currentValue = parseInt(qtyInput.value);
-                qtyInput.value = currentValue + 1;
-            });
-        }
-        
-        // Update modal content
-        modal.querySelector('.product-title').textContent = name;
-        modal.querySelector('.product-image img').src = image;
-        modal.querySelector('.product-image img').alt = name;
-        modal.querySelector('.product-price').textContent = price;
-        modal.querySelector('.product-description').textContent = description;
-        
-        // Reset quantity
-        const qtyInput = modal.querySelector('#qty');
-        if (qtyInput) qtyInput.value = 1;
-        
-        // Add to cart functionality
-        const addToCartBtn = modal.querySelector('.btn-add-to-cart');
-        addToCartBtn.addEventListener('click', function() {
-            const quantity = parseInt(modal.querySelector('#qty').value) || 1;
-            
-            if (window.tipunoCart && typeof window.tipunoCart.add === 'function') {
-                const product = {
-                    id: productId,
-                    name: name,
-                    price: parseFloat(price.replace('$', '')),
-                    image: image,
-                    quantity: quantity
-                };
+            // Add to cart from modal
+            modal.querySelector('.btn-add-to-cart-modal').addEventListener('click', function() {
+                const productId = parseInt(this.getAttribute('data-id'));
+                const productName = this.getAttribute('data-name');
+                const productPrice = parseFloat(this.getAttribute('data-price'));
+                const productImage = this.getAttribute('data-image');
                 
-                const success = window.tipunoCart.add(product);
+                const existingItem = cart.find(item => item.id === productId);
                 
-                if (success) {
-                    // Show success message
-                    const successMsg = document.createElement('div');
-                    successMsg.className = 'add-to-cart-success';
-                    successMsg.innerHTML = `
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({
+                        id: productId,
+                        name: productName,
+                        price: productPrice,
+                        image: productImage,
+                        quantity: 1
+                    });
+                }
+                
+                updateCart(cart);
+                
+                // Update button
+                this.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
+                this.classList.add('added');
+                
+                // Also update the original button
+                addToCartBtn.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
+                addToCartBtn.classList.add('added');
+                
+                // Reset both buttons after delay
+                setTimeout(() => {
+                    this.innerHTML = 'Add to Cart';
+                    this.classList.remove('added');
+                    addToCartBtn.innerHTML = 'Add to Cart';
+                    addToCartBtn.classList.remove('added');
+                }, 2000);
+                
+                // Close modal and redirect to checkout option
+                const checkoutPrompt = document.createElement('div');
+                checkoutPrompt.classList.add('checkout-prompt');
+                checkoutPrompt.innerHTML = `
+                    <div class="checkout-prompt-content">
                         <i class="fas fa-check-circle"></i>
-                        Added to cart! <a href="cart.php">View Cart</a>
-                    `;
-                    
-                    addToCartBtn.style.display = 'none';
-                    addToCartBtn.insertAdjacentElement('afterend', successMsg);
-                    
-                    // Remove message after 3 seconds and restore button
-                    setTimeout(() => {
-                        successMsg.remove();
-                        addToCartBtn.style.display = 'block';
-                    }, 3000);
-                    
-                    // Close modal after a delay
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                        document.body.classList.remove('modal-open');
-                    }, 2000);
-                }
-            }
-        });
-        
-        // Show the modal
-        modal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-    }
-    
-    // Add to cart functionality for product grid buttons
-    const addToCartButtons = document.querySelectorAll('.product-card .btn-add-to-cart');
-    addToCartButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (this.disabled) return;
-            
-            const product = {
-                id: this.getAttribute('data-id'),
-                name: this.getAttribute('data-name'),
-                price: parseFloat(this.getAttribute('data-price')),
-                image: this.getAttribute('data-image'),
-                quantity: 1
-            };
-            
-            if (window.tipunoCart && typeof window.tipunoCart.add === 'function') {
-                const success = window.tipunoCart.add(product);
+                        <p>Item added to your cart</p>
+                        <div class="checkout-prompt-buttons">
+                            <button class="continue-shopping">Continue Shopping</button>
+                            <button class="go-to-checkout">Proceed to Checkout</button>
+                        </div>
+                    </div>
+                `;
                 
-                if (success) {
-                    // Visual feedback
-                    const originalText = this.textContent;
-                    this.innerHTML = '<i class="fas fa-check"></i> Added!';
-                    this.classList.add('added');
-                    
+                modal.querySelector('.quick-view-content').appendChild(checkoutPrompt);
+                
+                checkoutPrompt.querySelector('.continue-shopping').addEventListener('click', () => {
+                    modal.classList.remove('show');
                     setTimeout(() => {
-                        this.textContent = originalText;
-                        this.classList.remove('added');
-                    }, 2000);
-                }
-            }
+                        modal.remove();
+                        document.body.classList.remove('modal-open');
+                    }, 300);
+                });
+                
+                checkoutPrompt.querySelector('.go-to-checkout').addEventListener('click', () => {
+                    window.location.href = 'checkout.php';
+                });
+            });
         });
     });
     

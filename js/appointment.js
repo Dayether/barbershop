@@ -215,13 +215,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.progress-bar').style.width = `${progressPercentage}%`;
     }
     
-    // Populate booking summary
+    // Override the populateSummary function to ensure proper color contrast
     function populateSummary() {
         // Get selected service
         const selectedService = document.querySelector('input[name="service"]:checked');
         if (selectedService) {
             document.getElementById('summary-service').textContent = selectedService.value;
+            document.getElementById('summary-service').style.color = '#111111';
             document.getElementById('summary-price').textContent = `$${selectedService.dataset.price}`;
+            document.getElementById('summary-price').style.color = '#d4af37';
+            document.getElementById('summary-price').style.fontWeight = '700';
         }
         
         // Get date and time
@@ -237,16 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 day: 'numeric'
             });
             document.getElementById('summary-date').textContent = formattedDate;
+            document.getElementById('summary-date').style.color = '#111111';
         }
         
         if (selectedTime) {
             document.getElementById('summary-time').textContent = convertTo12HourFormat(selectedTime.value);
+            document.getElementById('summary-time').style.color = '#111111';
         }
         
         // Get barber
         const selectedBarber = document.getElementById('barber');
         if (selectedBarber) {
             document.getElementById('summary-barber').textContent = selectedBarber.value || 'Any Available Barber';
+            document.getElementById('summary-barber').style.color = '#111111';
         }
         
         // Get personal details
@@ -257,22 +263,69 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (nameInput) {
             document.getElementById('summary-name').textContent = nameInput.value;
+            document.getElementById('summary-name').style.color = '#111111';
         }
         
         if (emailInput) {
             document.getElementById('summary-email').textContent = emailInput.value;
+            document.getElementById('summary-email').style.color = '#111111';
         }
         
         if (phoneInput) {
             document.getElementById('summary-phone').textContent = phoneInput.value;
+            document.getElementById('summary-phone').style.color = '#111111';
         }
         
         // Handle notes (optional)
         if (notesInput && notesInput.value.trim()) {
             document.getElementById('summary-notes').textContent = notesInput.value;
+            document.getElementById('summary-notes').style.color = '#111111';
             document.getElementById('summary-notes-container').style.display = 'flex';
         } else {
             document.getElementById('summary-notes-container').style.display = 'none';
+        }
+        
+        // Ensure all summary rows have proper background for contrast
+        document.querySelectorAll('.summary-row').forEach(row => {
+            row.style.backgroundColor = '#f5f5f5';
+            row.style.marginBottom = '10px';
+            row.style.padding = '12px';
+        });
+    }
+    
+    // Enhanced function to update confirmation details with better formatting
+    function updateConfirmationDetails(data) {
+        if (document.getElementById('booking-reference')) {
+            document.getElementById('booking-reference').innerHTML = data.booking_reference;
+            // Make sure the reference has high contrast
+            document.getElementById('booking-reference').style.color = '#d4af37';
+            document.getElementById('booking-reference').style.textShadow = '0 1px 1px rgba(0,0,0,0.2)';
+        }
+        
+        if (document.getElementById('confirmation-service')) {
+            document.getElementById('confirmation-service').innerHTML = document.querySelector('input[name="service"]:checked').value;
+            document.getElementById('confirmation-service').style.color = '#000000';
+            document.getElementById('confirmation-service').style.fontWeight = '700';
+        }
+        
+        // Format date and time for better readability
+        if (document.getElementById('confirmation-datetime')) {
+            const selectedDate = document.getElementById('appointment-date');
+            const selectedTime = document.querySelector('input[name="appointment-time"]:checked');
+            
+            if (selectedDate && selectedDate.value && selectedTime) {
+                const formattedDate = new Date(selectedDate.value).toLocaleDateString('en-US', {
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric'
+                });
+                
+                const timeValue = convertTo12HourFormat(selectedTime.value);
+                document.getElementById('confirmation-datetime').innerHTML = `${formattedDate} at ${timeValue}`;
+                document.getElementById('confirmation-datetime').style.color = '#000000';
+                document.getElementById('confirmation-datetime').style.fontWeight = '700';
+            }
         }
     }
     
@@ -416,28 +469,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     // Update confirmation details
-                    if (document.getElementById('booking-reference')) {
-                        document.getElementById('booking-reference').textContent = data.booking_reference;
-                    }
-                    
-                    if (document.getElementById('confirmation-service') && document.getElementById('summary-service')) {
-                        document.getElementById('confirmation-service').textContent = 
-                            document.getElementById('summary-service').textContent;
-                    }
-                    
-                    if (document.getElementById('confirmation-datetime') && 
-                        document.getElementById('summary-date') && 
-                        document.getElementById('summary-time')) {
-                        document.getElementById('confirmation-datetime').textContent = 
-                            document.getElementById('summary-date').textContent + ' at ' + 
-                            document.getElementById('summary-time').textContent;
-                    }
+                    updateConfirmationDetails(data);
                     
                     // Scroll to top of form
                     document.querySelector('.appointment-form-container').scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
                     });
+                    
+                    // Set styles for confirmation details
+                    setTimeout(() => {
+                        const confirmationDetails = document.querySelector('.confirmation-details');
+                        if (confirmationDetails) {
+                            confirmationDetails.style.backgroundColor = '#f8f8f8';
+                            confirmationDetails.querySelectorAll('p').forEach(p => {
+                                p.style.color = '#000000';
+                                p.style.backgroundColor = '#ffffff';
+                                p.style.borderRadius = '6px';
+                                p.style.padding = '12px';
+                                p.style.marginBottom = '10px';
+                                p.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                            });
+                        }
+                    }, 500);
                 } else {
                     showValidationError('Error: ' + (data.message || 'Failed to book appointment'));
                     if (confirmBtn) {

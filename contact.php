@@ -113,8 +113,11 @@ function test_input($data) {
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/contact.css">
+    <link rel="stylesheet" href="css/banner-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add iziToast CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
@@ -145,7 +148,7 @@ function test_input($data) {
                         </div>
                         <div class="info-content">
                             <h4>Our Location</h4>
-                            <p>123 Barber Street, Downtown<br>New York, NY 10001</p>
+                            <p>The Courtyard at Big Ben Complex, Lipa City, Philippines, 4217</p>
                         </div>
                     </div>
                     
@@ -205,22 +208,8 @@ function test_input($data) {
                     <div class="section-subtitle">Send a Message</div>
                     <h2 class="section-title">Get in Touch</h2>
                     
-                    <?php if ($formSubmitted && !$formError && isset($successMessage)): ?>
-                        <div class="success-message">
-                            <i class="fas fa-check-circle"></i>
-                            <?php echo $successMessage; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($formError && isset($errorMessage)): ?>
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <?php echo $errorMessage; ?>
-                        </div>
-                    <?php endif; ?>
-                    
                     <div class="contact-form">
-                        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="styled-form">
+                        <form id="contact-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="styled-form">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="name"><i class="fas fa-user"></i> Your Name</label>
@@ -264,7 +253,7 @@ function test_input($data) {
                                 <span class="error"><?php echo $messageErr; ?></span>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary">Send Message <i class="fas fa-paper-plane"></i></button>
+                            <button type="submit" id="submit-btn" class="btn btn-primary">Send Message <i class="fas fa-paper-plane"></i></button>
                         </form>
                     </div>
                 </div>
@@ -272,7 +261,7 @@ function test_input($data) {
             
             <!-- Google Map -->
             <div class="map-container" data-aos="fade-up" data-aos-delay="300">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.9663095343008!2d-74.00425882352196!3d40.74076351388875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b30eac9f%3A0xaca05ca48ab5ac2c!2sEmpire%20State%20Building!5e0!3m2!1sen!2sus!4v1652209498553!5m2!1sen!2sus" allowfullscreen="" loading="lazy"></iframe>
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3876.091677274235!2d121.1503051!3d13.9420165!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd6d89c640b801%3A0xeea76a75184b91c1!2sTipuno%20X%20Lipa!5e0!3m2!1sen!2sph!4v1717920000000!5m2!1sen!2sph" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
     </section>
@@ -292,8 +281,9 @@ function test_input($data) {
 
     <!-- Scripts -->
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <!-- Add iziToast JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/contact.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize AOS animation library
@@ -303,6 +293,238 @@ function test_input($data) {
                 once: true,
                 mirror: false
             });
+
+            // Initialize iziToast
+            iziToast.settings({
+                timeout: 5000,
+                resetOnHover: true,
+                position: 'topRight',
+                transitionIn: 'flipInX',
+                transitionOut: 'flipOutX',
+            });
+
+            <?php if ($formSubmitted && !$formError && isset($successMessage)): ?>
+                // Show success message
+                iziToast.success({
+                    title: 'Success!',
+                    message: '<?php echo $successMessage; ?>',
+                    icon: 'fas fa-check-circle'
+                });
+                
+                // Send a follow-up toast after success
+                setTimeout(function() {
+                    iziToast.info({
+                        title: 'Thank You',
+                        message: 'Our team will review your message and reach out to you shortly.',
+                        icon: 'fas fa-info-circle',
+                        iconColor: '#2a9d8f'
+                    });
+                }, 2000);
+            <?php endif; ?>
+
+            <?php if ($formError && isset($errorMessage)): ?>
+                // Show error message
+                iziToast.error({
+                    title: 'Error',
+                    message: '<?php echo $errorMessage; ?>',
+                    icon: 'fas fa-exclamation-circle'
+                });
+            <?php endif; ?>
+
+            <?php if ($formError): ?>
+                // Show validation errors with iziToast
+                <?php if (!empty($nameErr)): ?>
+                    iziToast.warning({
+                        title: 'Name Error',
+                        message: '<?php echo $nameErr; ?>',
+                        icon: 'fas fa-user'
+                    });
+                <?php endif; ?>
+
+                <?php if (!empty($emailErr)): ?>
+                    iziToast.warning({
+                        title: 'Email Error',
+                        message: '<?php echo $emailErr; ?>',
+                        icon: 'fas fa-envelope'
+                    });
+                <?php endif; ?>
+
+                <?php if (!empty($phoneErr)): ?>
+                    iziToast.warning({
+                        title: 'Phone Error',
+                        message: '<?php echo $phoneErr; ?>',
+                        icon: 'fas fa-phone'
+                    });
+                <?php endif; ?>
+
+                <?php if (!empty($subjectErr)): ?>
+                    iziToast.warning({
+                        title: 'Subject Error',
+                        message: '<?php echo $subjectErr; ?>',
+                        icon: 'fas fa-tag'
+                    });
+                <?php endif; ?>
+
+                <?php if (!empty($messageErr)): ?>
+                    iziToast.warning({
+                        title: 'Message Error',
+                        message: '<?php echo $messageErr; ?>',
+                        icon: 'fas fa-comment-alt'
+                    });
+                <?php endif; ?>
+            <?php endif; ?>
+
+            // Add client-side validation with iziToast feedback
+            const contactForm = document.getElementById('contact-form');
+            
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    let hasErrors = false;
+                    const name = document.getElementById('name').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const phone = document.getElementById('phone').value.trim();
+                    const subject = document.getElementById('subject').value;
+                    const message = document.getElementById('message').value.trim();
+                    
+                    // Clear previous errors
+                    document.querySelectorAll('.form-control').forEach(input => {
+                        input.classList.remove('error-input');
+                    });
+                    
+                    // Validate all fields
+                    if (!name) {
+                        document.getElementById('name').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Name Required',
+                            message: 'Please enter your name',
+                            icon: 'fas fa-user'
+                        });
+                        hasErrors = true;
+                    }
+                    
+                    if (!email) {
+                        document.getElementById('email').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Email Required',
+                            message: 'Please enter your email address',
+                            icon: 'fas fa-envelope'
+                        });
+                        hasErrors = true;
+                    } else if (!validateEmail(email)) {
+                        document.getElementById('email').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Invalid Email',
+                            message: 'Please enter a valid email address',
+                            icon: 'fas fa-envelope'
+                        });
+                        hasErrors = true;
+                    }
+                    
+                    if (!phone) {
+                        document.getElementById('phone').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Phone Required',
+                            message: 'Please enter your phone number',
+                            icon: 'fas fa-phone'
+                        });
+                        hasErrors = true;
+                    }
+                    
+                    if (!subject) {
+                        document.getElementById('subject').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Subject Required',
+                            message: 'Please select a subject',
+                            icon: 'fas fa-tag'
+                        });
+                        hasErrors = true;
+                    }
+                    
+                    if (!message) {
+                        document.getElementById('message').classList.add('error-input');
+                        iziToast.warning({
+                            title: 'Message Required',
+                            message: 'Please enter your message',
+                            icon: 'fas fa-comment-alt'
+                        });
+                        hasErrors = true;
+                    }
+                    
+                    if (hasErrors) {
+                        e.preventDefault();
+                        return false;
+                    } else {
+                        // Show sending message
+                        const submitBtn = document.getElementById('submit-btn');
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                        
+                        iziToast.info({
+                            title: 'Sending',
+                            message: 'Submitting your message...',
+                            icon: 'fas fa-paper-plane',
+                            timeout: false,
+                            id: 'sending-toast'
+                        });
+                        
+                        // Allow form submission
+                        return true;
+                    }
+                });
+                
+                // Add input event listeners to remove error styling when user types
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.addEventListener('input', function() {
+                        this.classList.remove('error-input');
+                    });
+                });
+            }
+            
+            // Email validation helper function
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+            
+            // Subject select enhancement - show toast on change
+            const subjectSelect = document.getElementById('subject');
+            if (subjectSelect) {
+                subjectSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        let icon = 'fas fa-tag';
+                        
+                        // Custom icons based on subject
+                        switch(this.value) {
+                            case 'Appointment Request':
+                                icon = 'fas fa-calendar-check';
+                                break;
+                            case 'Service Inquiry':
+                                icon = 'fas fa-cut';
+                                break;
+                            case 'Product Information':
+                                icon = 'fas fa-shopping-bag';
+                                break;
+                            case 'Pricing Question':
+                                icon = 'fas fa-dollar-sign';
+                                break;
+                            case 'Feedback':
+                                icon = 'fas fa-star';
+                                break;
+                            case 'Career Opportunity':
+                                icon = 'fas fa-briefcase';
+                                break;
+                        }
+                        
+                        iziToast.info({
+                            title: 'Subject Selected',
+                            message: `${this.value}`,
+                            icon: icon,
+                            iconColor: '#2a9d8f',
+                            timeout: 2000
+                        });
+                    }
+                });
+            }
         });
     </script>
 </body>

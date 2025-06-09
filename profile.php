@@ -178,6 +178,8 @@ try {
     <link rel="stylesheet" href="css/profile.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add iziToast CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -215,14 +217,6 @@ try {
                             <h2>Profile Information</h2>
                             <p>Update your personal details and profile picture</p>
                         </div>
-                        
-                        <?php if ($success_message): ?>
-                            <div class="alert alert-success"><?= htmlspecialchars($success_message) ?></div>
-                        <?php endif; ?>
-                        
-                        <?php if ($error_message): ?>
-                            <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
-                        <?php endif; ?>
                         
                         <div class="profile-container">
                             <div class="profile-header">
@@ -284,14 +278,6 @@ try {
                             <h2>Security Settings</h2>
                             <p>Manage your password and account security</p>
                         </div>
-                        
-                        <?php if ($password_success): ?>
-                            <div class="alert alert-success"><?= htmlspecialchars($password_success) ?></div>
-                        <?php endif; ?>
-                        
-                        <?php if ($password_error): ?>
-                            <div class="alert alert-danger"><?= htmlspecialchars($password_error) ?></div>
-                        <?php endif; ?>
                         
                         <form method="post" class="password-form">
                             <div class="form-group">
@@ -540,8 +526,51 @@ try {
 
     <?php include 'includes/footer.php'; ?>
 
+    <!-- Add iziToast JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize iziToast
+            iziToast.settings({
+                timeout: 5000,
+                resetOnHover: true,
+                position: 'topRight',
+                transitionIn: 'flipInX',
+                transitionOut: 'flipOutX',
+            });
+            
+            <?php if ($success_message): ?>
+            iziToast.success({
+                title: 'Success',
+                message: '<?= htmlspecialchars($success_message) ?>',
+                icon: 'fas fa-check-circle'
+            });
+            <?php endif; ?>
+            
+            <?php if ($error_message): ?>
+            iziToast.error({
+                title: 'Error',
+                message: '<?= htmlspecialchars($error_message) ?>',
+                icon: 'fas fa-exclamation-circle'
+            });
+            <?php endif; ?>
+            
+            <?php if ($password_success): ?>
+            iziToast.success({
+                title: 'Password Updated',
+                message: '<?= htmlspecialchars($password_success) ?>',
+                icon: 'fas fa-key'
+            });
+            <?php endif; ?>
+            
+            <?php if ($password_error): ?>
+            iziToast.error({
+                title: 'Password Error',
+                message: '<?= htmlspecialchars($password_error) ?>',
+                icon: 'fas fa-lock'
+            });
+            <?php endif; ?>
+            
             // Tab functionality
             const tabs = document.querySelectorAll('.profile-tabs .tab:not([href])');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -563,6 +592,32 @@ try {
                         const content = document.getElementById(contentId);
                         if (content) {
                             content.classList.add('active');
+                            
+                            // Show toast notification for tab change
+                            let toastTitle = 'Profile';
+                            let toastIcon = 'fas fa-user';
+                            
+                            switch(hash) {
+                                case 'security':
+                                    toastTitle = 'Security Settings';
+                                    toastIcon = 'fas fa-lock';
+                                    break;
+                                case 'appointments':
+                                    toastTitle = 'My Appointments';
+                                    toastIcon = 'fas fa-calendar-alt';
+                                    break;
+                                case 'orders':
+                                    toastTitle = 'My Orders';
+                                    toastIcon = 'fas fa-shopping-bag';
+                                    break;
+                            }
+                            
+                            iziToast.info({
+                                title: toastTitle,
+                                message: 'Viewing ' + toastTitle,
+                                icon: toastIcon,
+                                iconColor: '#2a9d8f'
+                            });
                         }
                     }
                 }
@@ -594,6 +649,33 @@ try {
                     
                     // Update URL hash without scrolling
                     history.pushState(null, null, '#' + tabId);
+                    
+                    // Show toast notification for tab change
+                    let toastTitle = 'Profile Information';
+                    let toastIcon = 'fas fa-user';
+                    
+                    switch(tabId) {
+                        case 'security':
+                            toastTitle = 'Security Settings';
+                            toastIcon = 'fas fa-lock';
+                            break;
+                        case 'appointments':
+                            toastTitle = 'My Appointments';
+                            toastIcon = 'fas fa-calendar-alt';
+                            break;
+                        case 'orders':
+                            toastTitle = 'My Orders';
+                            toastIcon = 'fas fa-shopping-bag';
+                            break;
+                    }
+                    
+                    iziToast.info({
+                        title: toastTitle,
+                        message: 'Viewing ' + toastTitle,
+                        icon: toastIcon,
+                        iconColor: '#2a9d8f',
+                        timeout: 2000
+                    });
                 });
             });
             
@@ -607,6 +689,13 @@ try {
                     
                     // Store active tab in localStorage so orders.php knows which tab was clicked
                     localStorage.setItem('activeTab', 'orders');
+                    
+                    iziToast.info({
+                        title: 'My Orders',
+                        message: 'Loading order details...',
+                        icon: 'fas fa-shopping-bag',
+                        iconColor: '#2a9d8f'
+                    });
                 });
             }
             
@@ -627,10 +716,70 @@ try {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         preview.src = e.target.result;
+                        
+                        iziToast.info({
+                            title: 'Profile Picture',
+                            message: 'New image selected. Save changes to update your profile',
+                            icon: 'fas fa-camera',
+                            iconColor: '#2a9d8f'
+                        });
                     }
                     reader.readAsDataURL(file);
                 }
             };
+            
+            // Form submission handlers with iziToast notifications
+            const profileForm = document.querySelector('.profile-form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    // Show processing state
+                    iziToast.info({
+                        title: 'Processing',
+                        message: 'Updating your profile...',
+                        icon: 'fas fa-spinner fa-spin',
+                        timeout: false,
+                        id: 'profile-update-toast'
+                    });
+                });
+            }
+            
+            const passwordForm = document.querySelector('.password-form');
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', function(e) {
+                    const newPassword = document.getElementById('new-password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    
+                    if (newPassword !== confirmPassword) {
+                        e.preventDefault();
+                        iziToast.error({
+                            title: 'Password Error',
+                            message: 'New passwords do not match',
+                            icon: 'fas fa-times-circle'
+                        });
+                        return false;
+                    }
+                    
+                    // Simple password strength validation
+                    if (newPassword.length < 8) {
+                        e.preventDefault();
+                        iziToast.warning({
+                            title: 'Weak Password',
+                            message: 'Password should be at least 8 characters long',
+                            icon: 'fas fa-exclamation-triangle'
+                        });
+                        return false;
+                    }
+                    
+                    // Show processing state
+                    iziToast.info({
+                        title: 'Processing',
+                        message: 'Updating your password...',
+                        icon: 'fas fa-spinner fa-spin',
+                        timeout: false,
+                        id: 'password-update-toast'
+                    });
+                });
+            }
             
             // Profile picture upload trigger
             const editPictureBtn = document.querySelector('.edit-picture');
@@ -642,19 +791,72 @@ try {
             
             // Account deletion confirmation
             window.confirmDeletion = function() {
-                if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                    alert('Please contact customer support to delete your account.');
-                }
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 999,
+                    title: 'Confirm Deletion',
+                    message: 'Are you sure you want to delete your account? This action cannot be undone.',
+                    position: 'center',
+                    icon: 'fas fa-exclamation-triangle',
+                    buttons: [
+                        ['<button><b>Yes</b></button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            
+                            iziToast.info({
+                                title: 'Account Deletion',
+                                message: 'Please contact customer support to complete account deletion.',
+                                icon: 'fas fa-info-circle',
+                                position: 'center',
+                                timeout: 8000
+                            });
+                        }, true],
+                        ['<button>No</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }],
+                    ]
+                });
             };
             
             // Appointment cancellation
             window.confirmCancelAppointment = function(appointmentId) {
-                if (confirm('Are you sure you want to cancel this appointment?')) {
-                    window.location.href = 'cancel_appointment.php?id=' + appointmentId;
-                }
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 999,
+                    title: 'Cancel Appointment',
+                    message: 'Are you sure you want to cancel this appointment?',
+                    position: 'center',
+                    buttons: [
+                        ['<button><b>Yes, Cancel It</b></button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            
+                            // Show loading toast
+                            iziToast.info({
+                                title: 'Processing',
+                                message: 'Cancelling your appointment...',
+                                icon: 'fas fa-spinner fa-spin',
+                                timeout: false,
+                                id: 'cancel-appointment-toast'
+                            });
+                            
+                            // Redirect
+                            window.location.href = 'cancel_appointment.php?id=' + appointmentId;
+                        }, true],
+                        ['<button>No, Keep It</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }],
+                    ]
+                });
             };
             
-            // Orders filtering
+            // Orders filtering with toast notifications
             const filterBtns = document.querySelectorAll('.filter-btn');
             const orderCards = document.querySelectorAll('.order-card');
             
@@ -669,16 +871,82 @@ try {
                     // Get filter value
                     const filterValue = this.getAttribute('data-filter');
                     
+                    // Show toast about filtering
+                    let filterText = 'All Orders';
+                    let filterIcon = 'fas fa-filter';
+                    
+                    switch(filterValue) {
+                        case 'processing':
+                            filterText = 'Processing Orders';
+                            filterIcon = 'fas fa-spinner';
+                            break;
+                        case 'shipped':
+                            filterText = 'Shipped Orders';
+                            filterIcon = 'fas fa-truck';
+                            break;
+                        case 'delivered':
+                            filterText = 'Delivered Orders';
+                            filterIcon = 'fas fa-box-open';
+                            break;
+                    }
+                    
+                    iziToast.info({
+                        title: 'Filter Applied',
+                        message: 'Showing ' + filterText,
+                        icon: filterIcon,
+                        iconColor: '#2a9d8f',
+                        timeout: 2000
+                    });
+                    
                     // Show/hide order cards based on filter
+                    let visibleCount = 0;
                     orderCards.forEach(card => {
                         if (filterValue === 'all' || card.getAttribute('data-status') === filterValue) {
                             card.style.display = 'block';
+                            visibleCount++;
                         } else {
                             card.style.display = 'none';
                         }
                     });
+                    
+                    // Show message if no orders match filter
+                    if (visibleCount === 0 && filterValue !== 'all') {
+                        iziToast.info({
+                            title: 'No Orders Found',
+                            message: 'No ' + filterText.toLowerCase() + ' to display',
+                            icon: 'fas fa-info-circle',
+                            timeout: 3000
+                        });
+                    }
                 });
             });
+
+            // Check URL parameters for success/error messages
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('password_reset') === 'success') {
+                iziToast.success({
+                    title: 'Password Reset',
+                    message: 'Your password has been successfully reset',
+                    icon: 'fas fa-key'
+                });
+            }
+            
+            if (urlParams.get('profile_updated') === 'success') {
+                iziToast.success({
+                    title: 'Profile Updated',
+                    message: 'Your profile has been successfully updated',
+                    icon: 'fas fa-user-check'
+                });
+            }
+            
+            if (urlParams.get('appointment_cancelled') === 'success') {
+                iziToast.success({
+                    title: 'Appointment Cancelled',
+                    message: 'Your appointment has been successfully cancelled',
+                    icon: 'fas fa-calendar-times'
+                });
+            }
         });
     </script>
 </body>

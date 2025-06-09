@@ -1,3 +1,49 @@
+/* Banner styling to match the gold color theme */
+.page-banner {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    padding: 60px 0;
+}
+
+.page-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1;
+}
+
+.page-banner .container {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.page-banner h1 {
+    color: #d4af37; /* Gold color to match the image */
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    font-weight: 700;
+}
+
+.page-banner p {
+    color: #ffffff;
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 4px;
+}
+
 .shop-section {
     padding: 60px 0 80px;
     background-color: #f9f9f9;
@@ -219,6 +265,7 @@
     margin: 10px 0;
 }
 
+/* Add to cart button styling */
 .btn-add-to-cart {
     width: 100%;
     padding: 10px;
@@ -228,7 +275,7 @@
     border-radius: 5px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.25s ease;
 }
 
 .btn-add-to-cart:hover {
@@ -241,7 +288,32 @@
 }
 
 .btn-add-to-cart.added {
-    background-color: var(--secondary-color, #c8a97e);
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+
+.btn-add-to-cart:active {
+    transform: scale(0.97);
+}
+
+.btn-add-to-cart i {
+    margin-right: 5px;
+    transition: transform 0.2s ease;
+}
+
+.btn-add-to-cart:hover i {
+    transform: translateY(-2px);
+}
+
+/* Animation for added state */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.btn-add-to-cart.added i {
+    animation: fadeIn 0.3s ease;
 }
 
 /* Enhanced Quick View Modal Styles */

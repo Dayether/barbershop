@@ -60,12 +60,14 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - Tipuno Barbershop</title>
-        <link rel="stylesheet" href="css/footer.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profile.css">
 
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add iziToast CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
     <style>
         .orders-section {
             padding: var(--space-xxl) 0;
@@ -379,7 +381,7 @@ try {
             <div class="orders-container">
                 <?php if (count($orders) > 0): ?>
                     <?php foreach ($orders as $order): ?>
-                        <div class="order-card">
+                        <div class="order-card" data-status="<?= strtolower($order['status']) ?>">
                             <div class="order-header">
                                 <div class="order-id">
                                     <i class="fas fa-receipt"></i>
@@ -460,8 +462,69 @@ try {
 
     <?php include 'includes/footer.php'; ?>
     
+    <!-- Add iziToast JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize iziToast
+            iziToast.settings({
+                timeout: 5000,
+                resetOnHover: true,
+                position: 'topRight',
+                transitionIn: 'flipInX',
+                transitionOut: 'flipOutX',
+            });
+
+            // Check for URL parameters to show appropriate notifications
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.has('order_placed') && urlParams.get('order_placed') === 'success') {
+                iziToast.success({
+                    title: 'Order Placed',
+                    message: 'Your order has been placed successfully!',
+                    icon: 'fas fa-check-circle'
+                });
+            }
+            
+            if (urlParams.has('order_cancelled') && urlParams.get('order_cancelled') === 'success') {
+                iziToast.success({
+                    title: 'Order Cancelled',
+                    message: 'Your order has been cancelled successfully',
+                    icon: 'fas fa-times-circle'
+                });
+            }
+            
+            if (urlParams.has('error')) {
+                const errorType = urlParams.get('error');
+                let errorMsg = 'There was an error processing your request';
+                
+                switch(errorType) {
+                    case 'not_found':
+                        errorMsg = 'The order you requested could not be found';
+                        break;
+                    case 'permission':
+                        errorMsg = 'You do not have permission to perform this action';
+                        break;
+                    case 'status':
+                        errorMsg = 'This order cannot be modified in its current status';
+                        break;
+                }
+                
+                iziToast.error({
+                    title: 'Error',
+                    message: errorMsg,
+                    icon: 'fas fa-exclamation-circle'
+                });
+            }
+            
+            <?php if (isset($_SESSION['order_message'])): ?>
+                iziToast.<?= $_SESSION['order_message_type'] === 'success' ? 'success' : 'error' ?>({
+                    title: '<?= $_SESSION['order_message_type'] === 'success' ? 'Success' : 'Error' ?>',
+                    message: '<?= addslashes($_SESSION['order_message']) ?>',
+                    icon: '<?= $_SESSION['order_message_type'] === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle' ?>'
+                });
+            <?php endif; ?>
+            
             // IMPORTANT: Execute this code immediately when page loads
             // Set Orders tab as active
             const ordersTabs = document.querySelectorAll('.profile-tabs .tab');
@@ -479,17 +542,52 @@ try {
             if (localStorage.getItem('activeTab') === 'orders') {
                 // Clear it after we've used it
                 localStorage.removeItem('activeTab');
+                
+                iziToast.info({
+                    title: 'My Orders',
+                    message: 'Viewing your order history',
+                    icon: 'fas fa-shopping-bag',
+                    iconColor: '#2a9d8f'
+                });
             }
             
             // Order cancellation confirmation
             window.confirmCancelOrder = function(orderId) {
-                if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-                    window.location.href = 'cancel_order.php?id=' + orderId;
-                }
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 999,
+                    title: 'Cancel Order',
+                    message: 'Are you sure you want to cancel this order? This action cannot be undone.',
+                    position: 'center',
+                    buttons: [
+                        ['<button><b>Yes, Cancel Order</b></button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            
+                            // Show processing toast
+                            iziToast.info({
+                                title: 'Processing',
+                                message: 'Cancelling your order...',
+                                icon: 'fas fa-spinner fa-spin',
+                                timeout: false,
+                                id: 'cancel-order-toast'
+                            });
+                            
+                            // Redirect to cancel order page
+                            window.location.href = 'cancel_order.php?id=' + orderId;
+                        }, true],
+                        ['<button>No, Keep Order</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }]
+                    ]
+                });
             };
             
             // Toggle order details functionality
-            function toggleOrderDetails(element) {
+            window.toggleOrderDetails = function(element) {
                 const orderCard = element.closest('.order-card');
                 const orderItems = orderCard.querySelector('.order-items');
                 
@@ -508,6 +606,16 @@ try {
                     orderItems.style.opacity = '1';
                     
                     element.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Order Details';
+                    
+                    // Show toast notification when expanding details
+                    const orderNumber = orderCard.querySelector('.order-id').textContent.trim();
+                    iziToast.info({
+                        title: 'Order Details',
+                        message: `Viewing details for ${orderNumber}`,
+                        icon: 'fas fa-info-circle',
+                        iconColor: '#2a9d8f',
+                        timeout: 2000
+                    });
                 } else {
                     orderItems.style.maxHeight = '0';
                     orderItems.style.opacity = '0';
@@ -518,16 +626,60 @@ try {
                     
                     element.innerHTML = '<i class="fas fa-chevron-down"></i> View Order Details';
                 }
-            }
-            
-            // Make toggleOrderDetails available globally
-            window.toggleOrderDetails = toggleOrderDetails;
+            };
             
             // Initialize - hide all order details by default but with smooth animation
             const orderItems = document.querySelectorAll('.order-items');
             orderItems.forEach(item => {
                 item.style.display = 'none';
             });
+            
+            // Add toast notification for "Buy Again" button
+            const buyAgainButtons = document.querySelectorAll('.order-actions .btn-secondary');
+            buyAgainButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    iziToast.info({
+                        title: 'Shop',
+                        message: 'Redirecting to shop page...',
+                        icon: 'fas fa-shopping-cart',
+                        iconColor: '#2a9d8f'
+                    });
+                });
+            });
+            
+            // Show welcome toast when first visiting the orders page
+            if (!sessionStorage.getItem('ordersPageVisited')) {
+                setTimeout(() => {
+                    iziToast.info({
+                        title: 'My Orders',
+                        message: 'View and track your order history',
+                        icon: 'fas fa-shopping-bag',
+                        iconColor: '#2a9d8f',
+                        position: 'bottomRight',
+                        timeout: 4000
+                    });
+                    sessionStorage.setItem('ordersPageVisited', 'true');
+                }, 1000);
+            }
+            
+            <?php if (count($orders) === 0): ?>
+            // Show suggestions toast for empty orders
+            setTimeout(() => {
+                iziToast.info({
+                    title: 'Start Shopping',
+                    message: 'Explore our premium grooming products!',
+                    icon: 'fas fa-tags',
+                    iconColor: '#2a9d8f',
+                    position: 'bottomRight',
+                    timeout: 8000,
+                    buttons: [
+                        ['<button>Shop Now</button>', function (instance, toast) {
+                            window.location.href = 'shop.php';
+                        }]
+                    ]
+                });
+            }, 3000);
+            <?php endif; ?>
         });
     </script>
 </body>

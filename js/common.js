@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Just update cart count badge
         updateCartBadge();
     }
+
+    setupCheckoutButtons();
 });
 
 /**
@@ -494,4 +496,16 @@ function updateCartCount() {
 // Add this placeholder function if it doesn't exist elsewhere
 function checkCartCleared() {
     // Implementation depends on your specific cart clearing logic
+}
+
+// Handle checkout button clicks globally
+function setupCheckoutButtons() {
+    const checkoutButtons = document.querySelectorAll('.notification-checkout, .cart-checkout');
+    
+    checkoutButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            window.location.href = 'payment.php';
+        });
+    });
 }

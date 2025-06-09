@@ -65,41 +65,14 @@ if (session_status() === PHP_SESSION_NONE) {
                 $isShopPage = in_array($currentPage, $shopPages);
                 ?>
                 
-                <!-- Cart icon -->
-                <a href="<?= $isShopPage ? 'javascript:void(0);' : 'shop.php' ?>" class="cart-link" id="cart-icon">
+                <!-- Replace cart icon with direct link to checkout.php -->
+                <a href="payment.php" class="cart-link">
                     <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count">0</span>
                 </a>
             </div>
         </div>
     </div>
 </header>
-
-<?php if(in_array(basename($_SERVER['PHP_SELF']), ['shop.php', 'product.php', 'checkout.php', 'cart.php'])): ?>
-<!-- Cart sidebar - Only include on shop pages -->
-<div id="cart-overlay" class="cart-overlay"></div>
-<div id="cart-sidebar" class="cart-sidebar">
-    <div class="cart-header">
-        <h3>Your Cart</h3>
-        <button id="close-cart" class="close-cart">&times;</button>
-    </div>
-    <div id="cart-items" class="cart-items">
-        <!-- Cart items will be loaded here -->
-        <div class="empty-cart">
-            <i class="fas fa-shopping-bag"></i>
-            <p>Your cart is empty</p>
-            <a href="shop.php" class="btn btn-secondary btn-sm">Start Shopping</a>
-        </div>
-    </div>
-    <div class="cart-footer">
-        <div class="cart-total">
-            <span>Total:</span>
-            <span id="cart-total">$0.00</span>
-        </div>
-        <a href="checkout.php" id="checkout-btn" class="btn btn-primary disabled">Proceed to Checkout</a>
-    </div>
-</div>
-<?php endif; ?>
 
 <script>
 document.body.setAttribute('data-page-type', '<?= $isShopPage ? "shop" : "other" ?>');

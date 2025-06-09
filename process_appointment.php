@@ -4,62 +4,96 @@ session_start();
 // Include database connection
 require_once 'includes/db_connection.php';
 
+// Check if user is logged in
+if (!isset($_SESSION['user'])) {
+    $response = [
+        'status' => 'error',
+        'message' => 'You must be logged in to book an appointment'
+    ];
+    echo json_encode($response);
+    exit;
+}
+
 // Process form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get form data
     $service = $_POST['service'] ?? '';
-    $date = $_POST['appointment-date'] ?? '';
-    $time = $_POST['appointment-time'] ?? '';
+    $appointmentDate = $_POST['appointment-date'] ?? '';
+    $appointmentTime = $_POST['appointment-time'] ?? '';
     $barber = $_POST['barber'] ?? '';
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $notes = $_POST['notes'] ?? '';
     
-    // Generate a booking reference
-    $booking_reference = 'TIP' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
-    
-    // User ID (if logged in)
-    $user_id = isset($_SESSION['user']) ? $_SESSION['user']['id'] : null;
-    
-    // Check if date is valid
-    if (!strtotime($date)) {
+    // Validate required fields
+    if (empty($service) || empty($appointmentDate) || empty($appointmentTime) || empty($name) || empty($email) || empty($phone)) {
         $response = [
-            'success' => false,
-            'message' => 'Invalid appointment date'
+            'status' => 'error',
+            'message' => 'All required fields must be filled out.'
         ];
         echo json_encode($response);
         exit;
     }
     
-    // Format date properly for MySQL
-    $formatted_date = date('Y-m-d', strtotime($date));
+    // Generate a unique booking reference
+    $bookingReference = 'TIP' . strtoupper(bin2hex(random_bytes(4)));
     
-    // Prepare SQL statement
-    $stmt = $conn->prepare("INSERT INTO appointments (booking_reference, user_id, service, appointment_date, appointment_time, barber, client_name, client_email, client_phone, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+    // Get user ID from session
+    $userId = $_SESSION['user']['id'];
     
-    $stmt->bind_param("sissssssss", $booking_reference, $user_id, $service, $formatted_date, $time, $barber, $name, $email, $phone, $notes);
-    
-    // Execute query
-    if ($stmt->execute()) {
-        // Return success response for AJAX request
+    try {
+        // Insert appointment into the database
+        $stmt = $conn->prepare("INSERT INTO appointments 
+            (booking_reference, user_id, service, appointment_date, appointment_time, barber, client_name, client_email, client_phone, notes) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->bind_param("sissssssss", 
+            $bookingReference,
+            $userId,
+            $service,
+            $appointmentDate,
+            $appointmentTime,
+            $barber,
+            $name,
+            $email,
+            $phone,
+            $notes
+        );
+        
+        if ($stmt->execute()) {
+            // Insert into appointment history for tracking
+            $appointmentId = $conn->insert_id;
+            $conn->query("INSERT INTO appointment_history (appointment_id, action, notes, user_id) 
+                VALUES ($appointmentId, 'create', 'Appointment created by customer', $userId)");
+            
+            // Send email notification (in a real app)
+            // sendEmailConfirmation($email, $bookingReference, $service, $appointmentDate, $appointmentTime);
+            
+            $response = [
+                'status' => 'success',
+                'message' => 'Your appointment has been booked successfully!',
+                'booking_reference' => $bookingReference,
+                'redirect' => 'appointment_confirmation.php?ref=' . $bookingReference
+            ];
+        } else {
+            throw new Exception($stmt->error);
+        }
+    } catch (Exception $e) {
         $response = [
-            'success' => true,
-            'booking_reference' => $booking_reference,
-            'message' => 'Your appointment has been successfully booked!'
+            'status' => 'error',
+            'message' => 'There was a problem booking your appointment: ' . $e->getMessage()
         ];
-        echo json_encode($response);
-    } else {
-        // Return error response
-        $response = [
-            'success' => false,
-            'message' => 'Error: ' . $stmt->error
-        ];
-        echo json_encode($response);
     }
     
-    $stmt->close();
-    $conn->close();
+    // Return JSON response
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+    
+} else {
+    // If accessed directly without POST data
+    header('Location: appointment.php');
     exit;
 }
 ?>

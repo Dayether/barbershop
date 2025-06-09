@@ -3,19 +3,26 @@ session_start();
 if (isset($_SESSION['user'])) {
     // Redirect admin users to admin dashboard, regular users to homepage
     if (isset($_SESSION['user']['account_type']) && $_SESSION['user']['account_type'] == 1) {
-        header('Location: admin/index.php');
+        header('Location: admin/admin_index.php');
     } else {
         header('Location: index.php');
     }
     exit;
 }
 
-require_once 'includes/db_connection.php';
+// Include autoloader
+require_once 'includes/autoload.php';
+
+// Initialize database connection
+$database = new Database();
+$db = $database->connect();
+
+// Initialize user object
+$user = new User($db);
 
 $error = '';
 $success = '';
 $email = ''; // Initialize email variable
-$password = ''; // Also initialize password for consistency
 
 // Check if user just registered successfully
 if (isset($_SESSION['registration_success'])) {
@@ -28,34 +35,42 @@ if (isset($_SESSION['registration_success'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
+    // Validate and sanitize input
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
     
-    // Check user in database - now retrieving account_type as well
-    $stmt = $conn->prepare("SELECT id, name, email, password, profile_pic, account_type FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Validation
+    $errors = [];
     
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        
-        // Verify password
-        if (password_verify($password, $user['password'])) {
+    if (empty($email)) {
+        $errors[] = 'Email is required';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Invalid email format';
+    }
+    
+    if (empty($password)) {
+        $errors[] = 'Password is required';
+    }
+    
+    // If validation passes, proceed with login
+    if (empty($errors)) {
+        // Try to login
+        if ($user->login($email, $password)) {
+            // Set session data
             $_SESSION['user'] = [
-                'id' => $user['id'],
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'profile_pic' => $user['profile_pic'] ?: 'images/default-profile.png',
-                'account_type' => $user['account_type']
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'profile_pic' => $user->profile_pic,
+                'account_type' => $user->account_type
             ];
             
             // Mark as new login to trigger cart reset
             $_SESSION['new_login'] = true;
             
             // Redirect admin users to admin dashboard
-            if ($user['account_type'] == 1) {
-                header('Location: admin/index.php');
+            if ($user->account_type == 1) {
+                header('Location: admin/admin_index.php');
                 exit;
             }
             
@@ -69,13 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit;
         } else {
-            $error = 'Invalid password';
+            $error = 'Invalid email or password';
         }
     } else {
-        $error = 'User not found';
+        $error = implode('<br>', $errors);
     }
-    
-    $stmt->close();
 }
 
 // For testing purposes - can be removed in production
@@ -112,6 +125,7 @@ if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
     <title>Login - Tipuno Barbershop</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/validation.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -145,17 +159,20 @@ if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
                     </div>
                     
                     <?php if ($success): ?>
-                        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+                        <div class="alert alert-success"><?= $success ?></div>
                     <?php endif; ?>
                     
                     <?php if ($error): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                        <div class="alert alert-danger"><?= $error ?></div>
                     <?php endif; ?>
                     
-                    <form method="post" class="auth-form">
+                    <form method="post" class="auth-form" id="login-form" novalidate>
                         <div class="form-floating">
-                            <input type="email" name="email" id="email" class="form-control" placeholder=" " value="<?= htmlspecialchars($registered_email ?? '') ?>" required>
+                            <input type="email" name="email" id="email" class="form-control" 
+                                placeholder=" " value="<?= htmlspecialchars($email) ?>" required>
                             <label for="email" class="form-label">Email Address</label>
+                            <div class="invalid-feedback">Please enter a valid email address.</div>
+                            <div class="valid-feedback">Looks good!</div>
                         </div>
                         
                         <div class="form-floating password-field">
@@ -164,6 +181,8 @@ if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
                             <button type="button" class="toggle-password">
                                 <i class="far fa-eye"></i>
                             </button>
+                            <div class="invalid-feedback">Please enter your password.</div>
+                            <div class="valid-feedback">Looks good!</div>
                         </div>
                         
                         <div class="form-check">
@@ -214,6 +233,86 @@ if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
                     eyeIcon.classList.toggle('fa-eye-slash');
                 });
             }
+            
+            // Form validation
+            const form = document.getElementById('login-form');
+            
+            // Email validation function
+            function validateEmail() {
+                const emailInput = document.getElementById('email');
+                const value = emailInput.value.trim();
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                
+                if (!value) {
+                    setInvalid(emailInput, 'Email address is required');
+                    return false;
+                } else if (!emailPattern.test(value)) {
+                    setInvalid(emailInput, 'Please enter a valid email address');
+                    return false;
+                } else {
+                    setValid(emailInput);
+                    return true;
+                }
+            }
+            
+            // Password validation function
+            function validatePassword() {
+                const passwordInput = document.getElementById('password');
+                const value = passwordInput.value;
+                
+                if (!value) {
+                    setInvalid(passwordInput, 'Password is required');
+                    return false;
+                } else {
+                    setValid(passwordInput);
+                    return true;
+                }
+            }
+            
+            // Helper functions for validation UI
+            function setInvalid(input, message) {
+                input.classList.remove('is-valid');
+                input.classList.add('is-invalid');
+                
+                // Update feedback message if provided
+                const feedback = input.nextElementSibling.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback') && message) {
+                    feedback.textContent = message;
+                }
+            }
+            
+            function setValid(input) {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+            }
+            
+            // Real-time validation on input
+            document.getElementById('email').addEventListener('input', validateEmail);
+            document.getElementById('password').addEventListener('input', validatePassword);
+            
+            // Login button animation
+            const loginButton = document.querySelector('.btn-auth');
+            loginButton.addEventListener('click', function() {
+                if (validateEmail() && validatePassword()) {
+                    this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
+                    this.classList.add('btn-loading');
+                }
+            });
+            
+            // Form submission
+            form.addEventListener('submit', function(event) {
+                // Run all validations
+                const isEmailValid = validateEmail();
+                const isPasswordValid = validatePassword();
+                
+                // If any validation fails, prevent form submission
+                if (!isEmailValid || !isPasswordValid) {
+                    event.preventDefault();
+                }
+            });
+            
+            // Initial validation to show any pre-filled fields
+            if (document.getElementById('email').value) validateEmail();
         });
     </script>
 </body>

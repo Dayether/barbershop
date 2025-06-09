@@ -1,0 +1,206 @@
+/* Messages specific styling */
+.message-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.message-subject {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.message-subject h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.message-meta {
+    display: flex;
+    gap: 15px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.message-meta i {
+    margin-right: 5px;
+}
+
+.message-sender-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--light-bg);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.message-sender {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.sender-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.sender-details h4 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.sender-contacts {
+    display: flex;
+    gap: 15px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.sender-email, .sender-phone {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.message-content {
+    padding: 20px;
+    background-color: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.message-text {
+    line-height: 1.8;
+    white-space: pre-line;
+}
+
+/* Table Styling */
+.sender-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sender-info .sender-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+}
+
+.sender-info .sender-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.sender-info .sender-details strong {
+    margin-bottom: 2px;
+    color: var(--secondary-color);
+}
+
+.sender-info .sender-details .email {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.message-subject-link {
+    display: block;
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.message-subject-link:hover {
+    color: var(--primary-color);
+}
+
+.message-preview {
+    display: block;
+    font-size: 0.85rem;
+    margin-top: 3px;
+    color: var(--text-muted);
+}
+
+.message-date {
+    display: flex;
+    flex-direction: column;
+}
+
+.message-date .date {
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.message-date .time {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.status-badge.status-new {
+    background-color: rgba(233, 30, 99, 0.1);
+    color: #E91E63;
+    border-left: 4px solid #E91E63;
+}
+
+.status-badge.status-read {
+    background-color: rgba(158, 158, 158, 0.1);
+    color: #9E9E9E;
+    border-left: 4px solid #9E9E9E;
+}
+
+.unread-row {
+    background-color: rgba(233, 30, 99, 0.03);
+    font-weight: 500;
+}
+
+@media (max-width: 992px) {
+    .message-sender-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    
+    .message-actions {
+        display: flex;
+        width: 100%;
+        gap: 10px;
+    }
+    
+    .message-actions .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .message-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .message-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .sender-contacts {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
