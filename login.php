@@ -56,9 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         // Try to login
         if ($user->login($email, $password)) {
-            // Set session data
             $_SESSION['user'] = [
-                'id' => $user->id,
+                'user_id' => $user->user_id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_pic' => $user->profile_pic,
@@ -94,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // For testing purposes - can be removed in production
 if (!$error && $email === 'user@example.com' && $password === 'password') {
     $_SESSION['user'] = [
-        'id' => 1,
+        'user_id' => 1,
         'email' => $email,
         'name' => 'John Doe',
         'profile_pic' => 'images/default-profile.png',
@@ -107,7 +106,7 @@ if (!$error && $email === 'user@example.com' && $password === 'password') {
 // For testing admin access - can be removed in production
 if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
     $_SESSION['user'] = [
-        'id' => 2,
+        'user_id' => 2,
         'email' => $email,
         'name' => 'Admin User',
         'profile_pic' => 'images/default-profile.png',

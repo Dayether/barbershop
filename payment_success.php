@@ -108,7 +108,7 @@ $clearCartScript = true;
                 <div class="action-buttons">
                     <a href="shop.php" class="btn btn-primary">Continue Shopping</a>
                     <?php if (isset($_SESSION['user'])): ?>
-                        <a href="my-orders.php" class="btn btn-outline">View My Orders</a>
+                        <a href="orders.php" class="btn btn-outline">View My Orders</a>
                     <?php endif; ?>
                 </div>
                 

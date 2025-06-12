@@ -19,7 +19,7 @@ try {
     // Get order
     $stmt = $conn->prepare("SELECT o.*, DATE_FORMAT(o.created_at, '%M %d, %Y') as order_date 
                            FROM orders o 
-                           WHERE o.id = ?");
+                           WHERE o.order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -28,7 +28,7 @@ try {
         $order = $result->fetch_assoc();
         
         // Verify the order belongs to the logged-in user if user is logged in
-        if (isset($_SESSION['user']) && $order['user_id'] != $_SESSION['user']['id']) {
+        if (isset($_SESSION['user']) && $order['user_id'] != $_SESSION['user']['user_id']) {
             // If not admin and trying to access someone else's order
             if (!isset($_SESSION['user']['role']) || $_SESSION['user']['role'] !== 'admin') {
                 header('Location: orders.php');
@@ -39,7 +39,7 @@ try {
         // Get order items
         $stmt = $conn->prepare("SELECT oi.*, p.name, p.image 
                                FROM order_items oi 
-                               JOIN products p ON oi.product_id = p.id 
+                               JOIN products p ON oi.product_id = p.product_id 
                                WHERE oi.order_id = ?");
         $stmt->bind_param("i", $order_id);
         $stmt->execute();

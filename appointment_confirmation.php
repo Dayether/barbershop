@@ -13,7 +13,7 @@ $appointmentDetails = null;
 
 // Get appointment details from the database
 try {
-    $stmt = $conn->prepare("SELECT * FROM appointments WHERE booking_reference = ?");
+    $stmt = $conn->prepare("SELECT a.*, b.name AS barber_name FROM appointments a LEFT JOIN barbers b ON a.barber_id = b.barber_id WHERE a.booking_reference = ?");
     $stmt->bind_param("s", $bookingReference);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -109,11 +109,11 @@ try {
                 
                 <div class="booking-details">
                     <p class="booking-ref">Booking Reference: <?= htmlspecialchars($bookingReference) ?></p>
-                    <p><strong>Service:</strong> <?= htmlspecialchars($appointmentDetails['service']) ?></p>
+                    <p><strong>Service:</strong> <?= htmlspecialchars($appointmentDetails['service_id']) ?></p>
                     <p><strong>Date:</strong> <?= htmlspecialchars($appointmentDetails['appointment_date']) ?></p>
                     <p><strong>Time:</strong> <?= htmlspecialchars($appointmentDetails['appointment_time']) ?></p>
-                    <?php if (!empty($appointmentDetails['barber'])): ?>
-                    <p><strong>Barber:</strong> <?= htmlspecialchars($appointmentDetails['barber']) ?></p>
+                    <?php if (!empty($appointmentDetails['barber_name'])): ?>
+                    <p><strong>Barber:</strong> <?= htmlspecialchars($appointmentDetails['barber_name']) ?></p>
                     <?php endif; ?>
                 </div>
                 
@@ -133,7 +133,19 @@ try {
 
     <?php include 'includes/footer.php'; ?>
     
+    <?php if (isset($_GET['success'])): ?>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        iziToast.success({
+            title: 'Success',
+            message: 'Appointment added successfully!',
+            icon: 'fas fa-check-circle'
+        });
+    });
+    </script>
+    <?php endif; ?>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize iziToast

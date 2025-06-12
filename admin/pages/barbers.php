@@ -348,55 +348,33 @@ if (isset($_GET['new'])) {
                 </thead>
                 <tbody>
                     <?php if (count($barbers) > 0): ?>
-                        <?php foreach ($barbers as $barber): ?>
-                            <tr>
-                                <td>
-                                    <div class="product-image barber-image">
-                                        <?php if (!empty($barber['image']) && file_exists('../' . $barber['image'])): ?>
-                                            <img src="../<?php echo htmlspecialchars($barber['image']); ?>" alt="<?php echo htmlspecialchars($barber['name']); ?>">
-                                        <?php else: ?>
-                                            <div class="no-image-small">
-                                                <i class="fas fa-user"></i>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="product-info">
-                                        <strong><?php echo htmlspecialchars($barber['name']); ?></strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="product-info description">
-                                        <?php echo htmlspecialchars(substr($barber['bio'], 0, 100)) . (strlen($barber['bio']) > 100 ? '...' : ''); ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <form method="post" id="status-form-<?php echo $barber['id']; ?>">
-                                        <input type="hidden" name="barber_id" value="<?php echo $barber['id']; ?>">
-                                        <input type="hidden" name="toggle_active" value="1">
-                                        <button type="button" class="status-badge <?php echo $barber['active'] ? 'status-active' : 'status-inactive'; ?>" onclick="submitStatusForm(<?php echo $barber['id']; ?>)">
-                                            <?php if ($barber['active']): ?>
-                                                <i class="fas fa-check-circle"></i> Active
-                                            <?php else: ?>
-                                                <i class="fas fa-times-circle"></i> Inactive
-                                            <?php endif; ?>
-                                        </button>
-                                    </form>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="?page=barbers&edit=<?php echo $barber['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="?page=barbers&delete=<?php echo $barber['id']; ?>" class="btn btn-accent btn-sm delete-btn">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+    <?php foreach ($barbers as $row): ?>
+        <tr>
+            <td>
+                <div class="barber-image">
+                    <img src="<?php echo htmlspecialchars($row['image'] ?: 'images/barber-placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                </div>
+            </td>
+            <td><?php echo htmlspecialchars($row['name']); ?></td>
+            <td><?php echo htmlspecialchars($row['bio']); ?></td>
+            <td>
+                <span class="status-badge status-<?php echo $row['active'] == 1 ? 'active' : 'inactive'; ?>">
+                    <?php echo $row['active'] == 1 ? 'Active' : 'Inactive'; ?>
+                </span>
+            </td>
+            <td class="actions">
+                <div class="action-buttons">
+                    <a href="?page=barbers&edit=<?php echo $row['barber_id']; ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="?page=barbers&delete=<?php echo $row['barber_id']; ?>" class="btn btn-accent btn-sm delete-btn">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+<?php else: ?>
                         <tr>
                             <td colspan="5" class="text-center">
                                 <div class="empty-state">

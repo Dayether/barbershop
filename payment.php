@@ -31,10 +31,10 @@ if (isset($_POST['add_product'])) {
     
     // Fetch product details
     try {
-        $stmt = $db->prepare("SELECT id, name, price, image FROM products WHERE id = ? AND active = 1");
+        $stmt = $db->prepare("SELECT product_id, name, price, image FROM products WHERE product_id = ? AND active = 1");
         $stmt->execute([$product_id]);
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($product) {
             // If product exists in cart, update quantity
             if (isset($_SESSION['cart'][$product_id])) {
@@ -42,7 +42,7 @@ if (isset($_POST['add_product'])) {
             } else {
                 // Add new product to cart
                 $_SESSION['cart'][$product_id] = [
-                    'id' => $product['id'],
+                    'id' => $product['product_id'],
                     'name' => $product['name'],
                     'price' => $product['price'],
                     'image' => $product['image'],
@@ -105,6 +105,41 @@ $tax_rate = 0.08;
 $tax_amount = $total * $tax_rate;
 // Final total with shipping and tax
 $final_total = $total + $shipping_cost + $tax_amount;
+
+// Server-side expiry date and credit card validation (accept only MM/YY)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && $_POST['payment_method'] === 'credit_card') {
+    $expiry_date = $_POST['expiry_date'] ?? '';
+    $card_number = $_POST['card_number'] ?? '';
+    $card_name = $_POST['card_name'] ?? '';
+    $cvv = $_POST['cvv'] ?? '';
+
+    // Remove spaces from card number for validation
+    $card_number_clean = preg_replace('/\s+/', '', $card_number);
+
+    // Validate all credit card fields
+    if (!$card_number_clean || !preg_match('/^\d{13,19}$/', $card_number_clean)) {
+        $payment_errors[] = "Please enter a valid card number.";
+    }
+    if (!$card_name) {
+        $payment_errors[] = "Please enter the name on your card.";
+    }
+    if (!$expiry_date || !preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $expiry_date)) {
+        $payment_errors[] = "Please enter a valid expiry date in MM/YY format (e.g. 05/27).";
+    } else {
+        list($exp_month, $exp_year) = explode('/', $expiry_date);
+        $exp_month = intval($exp_month);
+        $exp_year = intval($exp_year) + 2000;
+        $now = new DateTime();
+        $current_year = intval($now->format('Y'));
+        $current_month = intval($now->format('m'));
+        if ($exp_year < $current_year || ($exp_year == $current_year && $exp_month < $current_month)) {
+            $payment_errors[] = "Your card is expired. Please use a valid card.";
+        }
+    }
+    if (!$cvv || !preg_match('/^\d{3,4}$/', $cvv)) {
+        $payment_errors[] = "Please enter a valid CVV (3 or 4 digits).";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -235,33 +270,31 @@ $final_total = $total + $shipping_cost + $tax_amount;
                             <div class="payment-method">
                                 <input type="radio" id="payment_credit_card" name="payment_method" value="credit_card" checked>
                                 <label for="payment_credit_card">Credit Card</label>
-                                <div class="payment-box">
+                                <div class="payment-box" id="credit-card-box">
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="card_number">Card Number <span class="required">*</span></label>
-                                            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456">
+                                            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
                                             <span class="error-message">Please enter a valid card number</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="card_name">Name on Card <span class="required">*</span></label>
-                                            <input type="text" id="card_name" name="card_name">
+                                            <input type="text" id="card_name" name="card_name" autocomplete="cc-name">
                                             <span class="error-message">Please enter the name on your card</span>
                                         </div>
                                     </div>
-                                    
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="expiry_date">Expiry Date <span class="required">*</span></label>
-                                            <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/YY">
+                                            <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/YY" autocomplete="cc-exp">
                                             <span class="error-message">Please enter a valid expiry date (MM/YY)</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="cvv">CVV <span class="required">*</span></label>
-                                            <input type="text" id="cvv" name="cvv" placeholder="123">
+                                            <input type="text" id="cvv" name="cvv" placeholder="123" autocomplete="cc-csc">
                                             <span class="error-message">Please enter your card's security code</span>
                                         </div>
                                     </div>
-                                    
                                     <div class="credit-cards">
                                         <i class="fab fa-cc-visa"></i>
                                         <i class="fab fa-cc-mastercard"></i>
@@ -270,11 +303,10 @@ $final_total = $total + $shipping_cost + $tax_amount;
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="payment-method">
                                 <input type="radio" id="payment_paypal" name="payment_method" value="paypal">
                                 <label for="payment_paypal">PayPal</label>
-                                <div class="payment-box">
+                                <div class="payment-box" id="paypal-box">
                                     <p>Pay via PayPal; you can pay with your credit card if you don't have a PayPal account.</p>
                                     <i class="fab fa-paypal"></i>
                                 </div>
@@ -1002,17 +1034,36 @@ $final_total = $total + $shipping_cost + $tax_amount;
                 });
             }
             
-            // Expiry date formatting (MM/YY)
+            // Expiry date validation (MM/YY only, no forced formatting)
             const expiryDate = document.getElementById('expiry_date');
             if (expiryDate) {
-                expiryDate.addEventListener('input', function (e) {
-                    let value = e.target.value.replace(/\D/g, '');
-                    
-                    if (value.length > 2) {
-                        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                expiryDate.addEventListener('blur', function (e) {
+                    const val = e.target.value.trim();
+                    const errorMsg = e.target.nextElementSibling;
+                    let valid = true;
+                    let msg = '';
+                    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(val)) {
+                        valid = false;
+                        msg = 'Format must be MM/YY (e.g. 05/27)';
+                    } else {
+                        const [mm, yy] = val.split('/');
+                        let expMonth = parseInt(mm, 10);
+                        let expYear = parseInt(yy, 10) + 2000;
+                        const now = new Date();
+                        const expDate = new Date(expYear, expMonth - 1, 1);
+                        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        if (expDate < thisMonth) {
+                            valid = false;
+                            msg = 'Card is expired';
+                        }
                     }
-                    
-                    e.target.value = value;
+                    if (!valid) {
+                        e.target.classList.add('error');
+                        if (errorMsg) errorMsg.textContent = msg;
+                    } else {
+                        e.target.classList.remove('error');
+                        if (errorMsg) errorMsg.textContent = '';
+                    }
                 });
             }
         });

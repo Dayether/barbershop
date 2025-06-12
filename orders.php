@@ -11,7 +11,73 @@ require_once 'includes/db_connection.php';
 
 // Get user's orders
 $orders = [];
-$user_id = $_SESSION['user']['id'];
+$user_id = $_SESSION['user']['user_id'];
+
+// --- FIX: Handle address update for pending orders ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_address_order_id'])) {
+    $order_id = intval($_POST['edit_address_order_id']);
+    $address = trim($_POST['address']);
+    $city = trim($_POST['city']);
+    $zip = trim($_POST['zip']);
+    $country = trim($_POST['country']);
+
+    // Only allow update if order belongs to user and is pending
+    $stmt = $conn->prepare("UPDATE orders SET address = ?, city = ?, zip = ?, country = ? WHERE order_id = ? AND user_id = ? AND status = 'pending'");
+    $stmt->bind_param("ssssii", $address, $city, $zip, $country, $order_id, $user_id);
+
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        $_SESSION['order_message'] = "Shipping address updated successfully!";
+        $_SESSION['order_message_type'] = "success";
+    } else {
+        $_SESSION['order_message'] = "Failed to update address. Please try again or check if the order is still pending.";
+        $_SESSION['order_message_type'] = "error";
+    }
+    $stmt->close();
+    // Add a session flag for JS toast
+    $_SESSION['address_updated'] = ($_SESSION['order_message_type'] === 'success') ? 'success' : 'error';
+    header("Location: orders.php");
+    exit;
+}
+// --- END FIX ---
+
+// Handle order cancellation (user can cancel their own pending orders)
+if (isset($_GET['cancel_order_id']) && is_numeric($_GET['cancel_order_id'])) {
+    $cancel_order_id = intval($_GET['cancel_order_id']);
+    // Only allow cancelling user's own pending orders
+    $stmt = $conn->prepare("UPDATE orders SET status = 'cancelled' WHERE order_id = ? AND user_id = ? AND status = 'pending'");
+    $stmt->bind_param("ii", $cancel_order_id, $user_id);
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        $_SESSION['order_message'] = "Order cancelled successfully!";
+        $_SESSION['order_message_type'] = "success";
+    } else {
+        $_SESSION['order_message'] = "Failed to cancel order. It may have already been processed or cancelled.";
+        $_SESSION['order_message_type'] = "error";
+    }
+    $stmt->close();
+    $_SESSION['address_updated'] = $_SESSION['order_message_type'];
+    header("Location: orders.php");
+    exit;
+}
+
+// --- FIX: Handle order deletion for cancelled orders ---
+if (isset($_GET['delete_order_id']) && is_numeric($_GET['delete_order_id'])) {
+    $delete_order_id = intval($_GET['delete_order_id']);
+    // Only allow deleting user's own cancelled orders
+    $stmt = $conn->prepare("DELETE FROM orders WHERE order_id = ? AND user_id = ? AND status = 'cancelled'");
+    $stmt->bind_param("ii", $delete_order_id, $user_id);
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        $_SESSION['order_message'] = "Order deleted successfully!";
+        $_SESSION['order_message_type'] = "success";
+    } else {
+        $_SESSION['order_message'] = "Failed to delete order. Only cancelled orders can be deleted.";
+        $_SESSION['order_message_type'] = "error";
+    }
+    $stmt->close();
+    $_SESSION['address_updated'] = $_SESSION['order_message_type'];
+    header("Location: orders.php");
+    exit;
+}
+// --- END FIX ---
 
 try {
     // Get orders
@@ -36,10 +102,10 @@ try {
         $stmt = $conn->prepare("
             SELECT oi.*, p.name, p.image 
             FROM order_items oi 
-            LEFT JOIN products p ON oi.product_id = p.id 
+            LEFT JOIN products p ON oi.product_id = p.product_id 
             WHERE oi.order_id = ?
         ");
-        $stmt->bind_param("i", $order['id']);
+        $stmt->bind_param("i", $order['order_id']);
         $stmt->execute();
         $items_result = $stmt->get_result();
         
@@ -381,6 +447,17 @@ try {
             <div class="orders-container">
                 <?php if (count($orders) > 0): ?>
                     <?php foreach ($orders as $order): ?>
+                        <?php
+                            // Calculate order subtotal from items
+                            $order_subtotal = 0;
+                            foreach ($order['items'] as $item) {
+                                $order_subtotal += $item['price'] * $item['quantity'];
+                            }
+                            $shipping = 5.00;
+                            $tax = $order_subtotal * 0.08;
+                            $order_total = $order_subtotal + $shipping + $tax;
+                            $is_pending = strtolower($order['status']) === 'pending';
+                        ?>
                         <div class="order-card" data-status="<?= strtolower($order['status']) ?>">
                             <div class="order-header">
                                 <div class="order-id">
@@ -395,7 +472,7 @@ try {
                                         <?= ucfirst($order['status']) ?>
                                     </div>
                                     <div class="order-total">
-                                        $<?= number_format($order['total_amount'], 2) ?>
+                                        $<?= number_format($order_total, 2) ?>
                                     </div>
                                 </div>
                             </div>
@@ -412,7 +489,7 @@ try {
                                                 <span class="order-item-quantity">x<?= $item['quantity'] ?></span>
                                             </div>
                                             <div class="order-item-price">
-                                                $<?= number_format($item['price'], 2) ?> per item
+                                                $<?= number_format($item['price'] * $item['quantity'], 2) ?>
                                             </div>
                                         </div>
                                         <div class="order-item-subtotal">
@@ -429,12 +506,42 @@ try {
                                 <div class="order-actions">
                                     <a href="shop.php" class="btn btn-sm btn-secondary">Buy Again</a>
                                     <?php if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled'): ?>
-                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmCancelOrder(<?= $order['id'] ?>)">
+                                    <a href="orders.php?cancel_order_id=<?= $order['order_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this order?');">
                                         <i class="fas fa-times-circle"></i> Cancel Order
+                                    </a>
+                                    <?php elseif ($order['status'] === 'cancelled'): ?>
+                                    <a href="orders.php?delete_order_id=<?= $order['order_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to permanently delete this cancelled order?');">
+                                        <i class="fas fa-trash"></i> Delete
                                     </a>
                                     <?php endif; ?>
                                 </div>
                             </div>
+
+                            <!-- Editable address section for pending orders -->
+                            <?php if ($is_pending): ?>
+                            <div class="order-edit-address" style="padding: 20px 25px; border-top: 1px solid var(--border-light); background: #fffbe7;">
+                                <form method="post" action="orders.php" class="edit-address-form">
+                                    <input type="hidden" name="edit_address_order_id" value="<?= $order['order_id'] ?>">
+                                    <div style="margin-bottom:10px;">
+                                        <strong>Edit Shipping Address:</strong>
+                                    </div>
+                                    <div class="form-row" style="display:flex;gap:10px;flex-wrap:wrap;">
+                                        <input type="text" name="address" value="<?= htmlspecialchars($order['address']) ?>" placeholder="Address" required style="flex:2;">
+                                        <input type="text" name="city" value="<?= htmlspecialchars($order['city']) ?>" placeholder="City" required style="flex:1;">
+                                        <input type="text" name="zip" value="<?= htmlspecialchars($order['zip']) ?>" placeholder="ZIP" required style="flex:1;">
+                                        <input type="text" name="country" value="<?= htmlspecialchars($order['country']) ?>" placeholder="Country" required style="flex:1;">
+                                    </div>
+                                    <div style="margin-top:10px;">
+                                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Address</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <?php else: ?>
+                            <div class="order-edit-address" style="padding: 20px 25px; border-top: 1px solid var(--border-light); background: #f9f9f9;">
+                                <strong>Shipping Address:</strong>
+                                <div><?= htmlspecialchars($order['address']) ?>, <?= htmlspecialchars($order['city']) ?>, <?= htmlspecialchars($order['zip']) ?>, <?= htmlspecialchars($order['country']) ?></div>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -517,14 +624,45 @@ try {
                 });
             }
             
-            <?php if (isset($_SESSION['order_message'])): ?>
-                iziToast.<?= $_SESSION['order_message_type'] === 'success' ? 'success' : 'error' ?>({
-                    title: '<?= $_SESSION['order_message_type'] === 'success' ? 'Success' : 'Error' ?>',
-                    message: '<?= addslashes($_SESSION['order_message']) ?>',
-                    icon: '<?= $_SESSION['order_message_type'] === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle' ?>'
-                });
+            // Show toast for address update (after redirect)
+            <?php if (isset($_SESSION['address_updated'])): ?>
+                <?php if ($_SESSION['address_updated'] === 'success'): ?>
+                    iziToast.success({
+                        title: 'Success',
+                        message: 'Shipping address updated successfully!',
+                        icon: 'fas fa-check-circle'
+                    });
+                <?php else: ?>
+                    iziToast.error({
+                        title: 'Error',
+                        message: 'Failed to update address. Please try again or check if the order is still pending.',
+                        icon: 'fas fa-exclamation-circle'
+                    });
+                <?php endif; ?>
+                <?php unset($_SESSION['address_updated']); ?>
             <?php endif; ?>
-            
+
+            // Sweet alert for address update
+            <?php if (isset($_GET['address_updated'])): ?>
+                <?php if (isset($_SESSION['order_message']) && $_SESSION['order_message_type'] === 'success'): ?>
+                    iziToast.success({
+                        title: 'Success',
+                        message: '<?php echo addslashes($_SESSION['order_message']); ?>',
+                        icon: 'fas fa-check-circle'
+                    });
+                <?php elseif (isset($_SESSION['order_message'])): ?>
+                    iziToast.error({
+                        title: 'Error',
+                        message: '<?php echo addslashes($_SESSION['order_message']); ?>',
+                        icon: 'fas fa-exclamation-circle'
+                    });
+                <?php endif; ?>
+                <?php
+                unset($_SESSION['order_message']);
+                unset($_SESSION['order_message_type']);
+                ?>
+            <?php endif; ?>
+
             // IMPORTANT: Execute this code immediately when page loads
             // Set Orders tab as active
             const ordersTabs = document.querySelectorAll('.profile-tabs .tab');

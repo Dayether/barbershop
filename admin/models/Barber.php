@@ -23,7 +23,7 @@ class Barber {
         
         // Create query
         $query = "SELECT * FROM " . $this->table . "
-                  ORDER BY id DESC
+                  ORDER BY barber_id DESC
                   LIMIT :limit OFFSET :offset";
         
         // Prepare statement
@@ -52,7 +52,7 @@ class Barber {
     // Read single barber
     public function readSingle() {
         // Create query
-        $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
+        $query = "SELECT * FROM " . $this->table . " WHERE barber_id = :id";
         
         // Prepare statement
         $stmt = $this->conn->prepare($query);
@@ -127,7 +127,7 @@ class Barber {
             $query .= ", image = :image";
         }
         
-        $query .= " WHERE id = :id";
+        $query .= " WHERE barber_id = :id";
         
         // Prepare statement
         $stmt = $this->conn->prepare($query);
@@ -168,7 +168,7 @@ class Barber {
         $image_path = $this->image;
         
         // Create query
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $query = "DELETE FROM " . $this->table . " WHERE barber_id = :id";
         
         // Prepare statement
         $stmt = $this->conn->prepare($query);
@@ -203,7 +203,7 @@ class Barber {
         $this->active = $this->active ? 0 : 1;
         
         // Create query
-        $query = "UPDATE " . $this->table . " SET active = :active WHERE id = :id";
+        $query = "UPDATE " . $this->table . " SET active = :active WHERE barber_id = :id";
         
         // Prepare statement
         $stmt = $this->conn->prepare($query);
@@ -222,7 +222,7 @@ class Barber {
 
     // Get all active barbers (for dropdowns)
     public static function getActiveBarbers($db) {
-        $query = "SELECT id, name FROM barbers WHERE active = 1 ORDER BY name ASC";
+        $query = "SELECT barber_id, name FROM barbers WHERE active = 1 ORDER BY name ASC";
         $stmt = $db->prepare($query);
         $stmt->execute();
         

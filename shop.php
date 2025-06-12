@@ -25,7 +25,7 @@ if (isset($_SESSION['new_login']) && $_SESSION['new_login'] === true) {
 $products = [];
 try {
     // Get all active products
-    $stmt = $conn->prepare("SELECT id, name, description, price, image, stock FROM products WHERE active = 1");
+    $stmt = $conn->prepare("SELECT product_id, name, description, price, image, stock FROM products WHERE active = 1");
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -183,7 +183,7 @@ if (count($products) == 0) {
                                 <div class="product-price">$<?= number_format($product['price'], 2) ?></div>
                                 
                                 <button class="btn-add-to-cart" 
-                                        data-id="<?= $product['id'] ?>" 
+                                        data-id="<?= $product['product_id'] ?>" 
                                         data-name="<?= htmlspecialchars($product['name']) ?>" 
                                         data-price="<?= $product['price'] ?>"
                                         data-image="<?= !empty($product['image']) ? $product['image'] : 'images/product-placeholder.jpg' ?>"
@@ -202,6 +202,66 @@ if (count($products) == 0) {
             </div>
         </div>
     </section>
+
+    <!-- Floating View Cart Button -->
+    <?php
+    $cart_count = 0;
+    if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
+        foreach ($_SESSION['cart'] as $item) {
+            $cart_count += (int)$item['quantity'];
+        }
+    }
+    ?>
+    <?php if ($cart_count > 0): ?>
+    <a href="payment.php" class="floating-cart-btn" id="floating-cart-btn">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count"><?= $cart_count ?></span>
+        View Cart / Checkout
+    </a>
+    <style>
+    .floating-cart-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #2a9d8f;
+        color: #fff;
+        padding: 14px 28px 14px 18px;
+        border-radius: 30px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        font-size: 1.1rem;
+        font-weight: 600;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    .floating-cart-btn:hover {
+        background: #21867a;
+        color: #fff;
+        text-decoration: none;
+    }
+    .floating-cart-btn .cart-count {
+        background: #fff;
+        color: #2a9d8f;
+        border-radius: 50%;
+        padding: 2px 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-right: 4px;
+        margin-left: 2px;
+    }
+    @media (max-width: 600px) {
+        .floating-cart-btn {
+            right: 10px;
+            bottom: 10px;
+            padding: 10px 18px 10px 12px;
+            font-size: 1rem;
+        }
+    }
+    </style>
+    <?php endif; ?>
 
     <?php include 'includes/footer.php'; ?>
 

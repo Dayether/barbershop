@@ -6,93 +6,128 @@ require_once 'includes/db_connection.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
-    $response = [
-        'status' => 'error',
-        'message' => 'You must be logged in to book an appointment'
-    ];
-    echo json_encode($response);
+    header('Location: login.php');
     exit;
 }
 
-// Process form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
-    $service = $_POST['service'] ?? '';
-    $appointmentDate = $_POST['appointment-date'] ?? '';
-    $appointmentTime = $_POST['appointment-time'] ?? '';
-    $barber = $_POST['barber'] ?? '';
-    $name = $_POST['name'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone = $_POST['phone'] ?? '';
-    $notes = $_POST['notes'] ?? '';
-    
-    // Validate required fields
-    if (empty($service) || empty($appointmentDate) || empty($appointmentTime) || empty($name) || empty($email) || empty($phone)) {
-        $response = [
-            'status' => 'error',
-            'message' => 'All required fields must be filled out.'
-        ];
-        echo json_encode($response);
+// Only accept POST
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    header('Location: appointment.php');
+    exit;
+}
+
+// Get form data
+$service_id = isset($_POST['service_id']) ? intval($_POST['service_id']) : 0;
+$appointment_date = isset($_POST['appointment-date']) ? trim($_POST['appointment-date']) : '';
+$appointment_time = isset($_POST['appointment-time']) ? trim($_POST['appointment-time']) : '';
+$barber_id = (isset($_POST['barber_id']) && $_POST['barber_id'] !== '') ? intval($_POST['barber_id']) : null;
+$client_name = isset($_POST['name']) ? trim($_POST['name']) : '';
+$client_email = isset($_POST['email']) ? trim($_POST['email']) : '';
+$client_phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+$notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
+$user_id = $_SESSION['user']['user_id'];
+
+// Validate required fields
+if (
+    !$service_id || !$appointment_date || !$appointment_time ||
+    !$client_name || !$client_email || !$client_phone
+) {
+    $_SESSION['appointment_error'] = "All required fields must be filled out.";
+    header('Location: appointment.php');
+    exit;
+}
+
+// Check for double booking
+if ($barber_id === null) {
+    // Check if any barber is already booked at this date/time for this service
+    $check_sql = "SELECT COUNT(*) FROM appointments WHERE appointment_date = ? AND appointment_time = ? AND service_id = ? AND status IN ('pending', 'confirmed')";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("ssi", $appointment_date, $appointment_time, $service_id);
+} else {
+    // Check if this barber is already booked at this date/time
+    $check_sql = "SELECT COUNT(*) FROM appointments WHERE appointment_date = ? AND appointment_time = ? AND barber_id = ? AND status IN ('pending', 'confirmed')";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("ssi", $appointment_date, $appointment_time, $barber_id);
+}
+$check_stmt->execute();
+$check_stmt->bind_result($count);
+$check_stmt->fetch();
+$check_stmt->close();
+
+if ($count > 0) {
+    $_SESSION['appointment_error'] = "The selected date and time is already booked. Please choose another slot.";
+    header('Location: appointment.php');
+    exit;
+}
+
+// Generate unique booking reference
+$booking_reference = 'TIP' . strtoupper(bin2hex(random_bytes(4)));
+
+// Prepare SQL with correct types
+if ($barber_id === null) {
+    $sql = "INSERT INTO appointments 
+        (booking_reference, user_id, service_id, appointment_date, appointment_time, barber_id, client_name, client_email, client_phone, notes, status) 
+        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, 'pending')";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        $_SESSION['appointment_error'] = "There was a problem booking your appointment: " . $conn->error;
+        header('Location: appointment.php');
         exit;
     }
-    
-    // Generate a unique booking reference
-    $bookingReference = 'TIP' . strtoupper(bin2hex(random_bytes(4)));
-    
-    // Get user ID from session
-    $userId = $_SESSION['user']['id'];
-    
-    try {
-        // Insert appointment into the database
-        $stmt = $conn->prepare("INSERT INTO appointments 
-            (booking_reference, user_id, service, appointment_date, appointment_time, barber, client_name, client_email, client_phone, notes) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        
-        $stmt->bind_param("sissssssss", 
-            $bookingReference,
-            $userId,
-            $service,
-            $appointmentDate,
-            $appointmentTime,
-            $barber,
-            $name,
-            $email,
-            $phone,
-            $notes
-        );
-        
-        if ($stmt->execute()) {
-            // Insert into appointment history for tracking
-            $appointmentId = $conn->insert_id;
-            $conn->query("INSERT INTO appointment_history (appointment_id, action, notes, user_id) 
-                VALUES ($appointmentId, 'create', 'Appointment created by customer', $userId)");
-            
-            // Send email notification (in a real app)
-            // sendEmailConfirmation($email, $bookingReference, $service, $appointmentDate, $appointmentTime);
-            
-            $response = [
-                'status' => 'success',
-                'message' => 'Your appointment has been booked successfully!',
-                'booking_reference' => $bookingReference,
-                'redirect' => 'appointment_confirmation.php?ref=' . $bookingReference
-            ];
-        } else {
-            throw new Exception($stmt->error);
-        }
-    } catch (Exception $e) {
-        $response = [
-            'status' => 'error',
-            'message' => 'There was a problem booking your appointment: ' . $e->getMessage()
-        ];
-    }
-    
-    // Return JSON response
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
-    
+    $stmt->bind_param(
+        "siissssss",
+        $booking_reference,
+        $user_id,
+        $service_id,
+        $appointment_date,
+        $appointment_time,
+        $client_name,
+        $client_email,
+        $client_phone,
+        $notes
+    );
 } else {
-    // If accessed directly without POST data
+    $sql = "INSERT INTO appointments 
+        (booking_reference, user_id, service_id, appointment_date, appointment_time, barber_id, client_name, client_email, client_phone, notes, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        $_SESSION['appointment_error'] = "There was a problem booking your appointment: " . $conn->error;
+        header('Location: appointment.php');
+        exit;
+    }
+    $stmt->bind_param(
+        "siississss",
+        $booking_reference,
+        $user_id,
+        $service_id,
+        $appointment_date,
+        $appointment_time,
+        $barber_id,
+        $client_name,
+        $client_email,
+        $client_phone,
+        $notes
+    );
+}
+
+if ($stmt->execute()) {
+    $appointment_id = $conn->insert_id;
+    // Add to appointment_history
+    $history_stmt = $conn->prepare("INSERT INTO appointment_history (appointment_id, action, notes, user_id) VALUES (?, 'create', 'Appointment created by customer', ?)");
+    $history_stmt->bind_param("ii", $appointment_id, $user_id);
+    $history_stmt->execute();
+    $history_stmt->close();
+
+    // Redirect with success flag
+    header("Location: appointment_confirmation.php?ref=" . urlencode($booking_reference) . "&success=1");
+    exit;
+} else {
+    // Log error for debugging
+    error_log("Appointment insert error: " . $stmt->error);
+    $_SESSION['appointment_error'] = "There was a problem booking your appointment: " . $stmt->error;
     header('Location: appointment.php');
     exit;
 }

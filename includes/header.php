@@ -29,29 +29,27 @@ if (session_status() === PHP_SESSION_NONE) {
             
             <div class="header-actions">
                 <?php if(isset($_SESSION['user'])): ?>
-                    <div class="profile-dropdown">
-                        <button id="profile-toggle" class="profile-toggle" aria-expanded="false">
-                            <img src="<?= htmlspecialchars($_SESSION['user']['profile_pic']) ?>" alt="Profile" class="profile-img-small">
-                            <span class="profile-name"><?= htmlspecialchars($_SESSION['user']['name']) ?></span>
+                    <!-- Example user/admin dropdown in header -->
+                    <div class="user-dropdown">
+                        <button class="user-dropdown-toggle" id="userDropdownBtn">
+                            <img src="<?= htmlspecialchars($_SESSION['user']['profile_pic'] ?? 'images/default-profile.png') ?>" alt="Profile" class="profile-pic">
+                            <span><?= htmlspecialchars($_SESSION['user']['name']) ?></span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
-                        <div id="profile-panel" class="profile-panel">
-                            <div class="profile-header">
-                                <img src="<?= htmlspecialchars($_SESSION['user']['profile_pic']) ?>" alt="Profile" class="profile-img">
-                                <div class="profile-info">
-                                    <span class="profile-username"><?= htmlspecialchars($_SESSION['user']['name']) ?></span>
-                                    <span class="profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></span>
-                                </div>
-                            </div>
-                            <div class="profile-links">
-                                <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
-                                <a href="my_appointments.php"><i class="fas fa-calendar"></i> My Appointments</a>
-                                <a href="orders.php"><i class="fas fa-shopping-bag"></i> My Orders</a>
-                                <?php if(isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin'): ?>
-                                    <a href="admin/dashboard.php"><i class="fas fa-tachometer-alt"></i> Admin Dashboard</a>
-                                <?php endif; ?>
-                                <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                            </div>
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="profile.php" class="dropdown-item<?= basename($_SERVER['PHP_SELF']) === 'profile.php' ? ' active' : '' ?>">
+                                <i class="fas fa-user"></i> My Profile
+                            </a>
+                            <a href="my_appointments.php" class="dropdown-item<?= basename($_SERVER['PHP_SELF']) === 'my_appointments.php' ? ' active' : '' ?>">
+                                <i class="fas fa-calendar-alt"></i> My Appointments
+                            </a>
+                            <a href="orders.php" class="dropdown-item<?= basename($_SERVER['PHP_SELF']) === 'orders.php' ? ' active' : '' ?>">
+                                <i class="fas fa-shopping-bag"></i> My Orders
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="logout.php" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
                         </div>
                     </div>
                 <?php else: ?>
@@ -78,4 +76,57 @@ if (session_status() === PHP_SESSION_NONE) {
 document.body.setAttribute('data-page-type', '<?= $isShopPage ? "shop" : "other" ?>');
 </script>
 
-<body <?php if(isset($_SESSION['user'])) echo 'data-user-id="' . $_SESSION['user']['id'] . '"'; ?> <?php if(isset($page_type)) echo 'data-page-type="' . $page_type . '"'; ?>>
+<body <?php if(isset($_SESSION['user'])) echo 'data-user-id="' . $_SESSION['user']['user_id'] . '"'; ?> <?php if(isset($page_type)) echo 'data-page-type="' . $page_type . '"'; ?>>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('userDropdownBtn');
+    const menu = document.getElementById('userDropdownMenu');
+    if (btn && menu) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            menu.classList.toggle('show');
+        });
+        document.addEventListener('click', function() {
+            menu.classList.remove('show');
+        });
+    }
+});
+</script>
+<style>
+.user-dropdown { position: relative; display: inline-block; }
+.user-dropdown-toggle { background: none; border: none; cursor: pointer; display: flex; align-items: center; }
+.user-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    min-width: 180px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    z-index: 1000;
+    padding: 10px 0;
+}
+.user-dropdown-menu.show { display: block; }
+.user-dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.user-dropdown-menu .dropdown-item.active,
+.user-dropdown-menu .dropdown-item:hover {
+    background: #f5f5f5;
+    color: var(--primary-color, #c8a656);
+}
+.user-dropdown-menu .dropdown-divider {
+    height: 1px;
+    background: #eee;
+    margin: 8px 0;
+}
+.profile-pic {
+    width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; object-fit: cover;
+}
+</style>

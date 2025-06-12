@@ -28,13 +28,13 @@ class Order {
         $offset = ($page - 1) * $perPage;
         
         $query = "SELECT o.*, u.name as user_name FROM orders o 
-                  LEFT JOIN users u ON o.user_id = u.id";
+                  LEFT JOIN users u ON o.user_id = u.user_id";
                   
         if ($status) {
             $query .= " WHERE o.status = :status";
         }
         
-        $query .= " ORDER BY o.created_at DESC LIMIT :limit OFFSET :offset";
+        $query .= " ORDER BY o.order_id DESC LIMIT :limit OFFSET :offset";
         
         $stmt = $this->conn->prepare($query);
         
@@ -71,13 +71,10 @@ class Order {
     
     // Read single order by ID
     public function readSingle() {
-        $query = "SELECT o.*, u.name as user_name 
-                  FROM orders o 
-                  LEFT JOIN users u ON o.user_id = u.id 
-                  WHERE o.id = :id";
+        $query = "SELECT o.*, u.name AS user_name FROM orders o LEFT JOIN users u ON o.user_id = u.user_id WHERE o.order_id = :id";
                   
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -87,7 +84,7 @@ class Order {
         }
         
         // Set properties
-        $this->id = $row['id'];
+        $this->id = $row['order_id'];
         $this->order_reference = $row['order_reference'];
         $this->user_id = $row['user_id'];
         $this->total_amount = $row['total_amount'];
@@ -107,36 +104,47 @@ class Order {
     
     // Get order items
     public function getOrderItems() {
-        $query = "SELECT oi.*, p.image as product_image 
+        $query = "SELECT oi.*, p.name, p.image AS product_image 
                   FROM order_items oi 
-                  LEFT JOIN products p ON oi.product_id = p.id 
+                  LEFT JOIN products p ON oi.product_id = p.product_id 
                   WHERE oi.order_id = :order_id";
                   
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':order_id', $this->id);
+        $stmt->bindParam(':order_id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
         
         return $stmt;
     }
     
+    // Add this method to fetch order items by order_id
+    public function getOrderItemsByOrderId($order_id) {
+        $query = "SELECT oi.*, p.name, p.image AS product_image 
+                  FROM order_items oi 
+                  LEFT JOIN products p ON oi.product_id = p.product_id 
+                  WHERE oi.order_id = :order_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt;
+    }
+
     // Update order details
     public function update() {
-        $query = "UPDATE orders
-                  SET first_name = :first_name,
-                      last_name = :last_name,
-                      email = :email,
-                      address = :address,
-                      city = :city,
-                      zip = :zip,
-                      country = :country,
-                      phone = :phone,
-                      status = :status
-                  WHERE id = :id";
-                  
+        $query = "UPDATE orders SET 
+        first_name = :first_name,
+        last_name = :last_name,
+        email = :email,
+        address = :address,
+        city = :city,
+        zip = :zip,
+        country = :country,
+        phone = :phone,
+        status = :status
+        WHERE order_id = :order_id"; // <-- use order_id, not id
+
         $stmt = $this->conn->prepare($query);
-        
+
         // Bind parameters
-        $stmt->bindParam(':id', $this->id);
         $stmt->bindParam(':first_name', $this->first_name);
         $stmt->bindParam(':last_name', $this->last_name);
         $stmt->bindParam(':email', $this->email);
@@ -146,12 +154,11 @@ class Order {
         $stmt->bindParam(':country', $this->country);
         $stmt->bindParam(':phone', $this->phone);
         $stmt->bindParam(':status', $this->status);
-        
-        // Execute query
+        $stmt->bindParam(':order_id', $this->id); // <-- bind to $this->id
+
         if ($stmt->execute()) {
             return true;
         }
-        
         return false;
     }
     
@@ -173,20 +180,20 @@ class Order {
     // Delete order
     public function delete() {
         // Delete order items first to maintain referential integrity
-        $deleteItemsQuery = "DELETE FROM order_items WHERE order_id = :id";
+        $deleteItemsQuery = "DELETE FROM order_items WHERE order_id = :order_id";
         $stmt = $this->conn->prepare($deleteItemsQuery);
-        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':order_id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
-        
+
         // Then delete the order
-        $query = "DELETE FROM orders WHERE id = :id";
+        $query = "DELETE FROM orders WHERE order_id = :order_id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $this->id);
-        
+        $stmt->bindParam(':order_id', $this->id, PDO::PARAM_INT);
+
         if ($stmt->execute()) {
             return true;
         }
-        
+
         return false;
     }
     

@@ -10,7 +10,7 @@ if (!isset($_SESSION['user'])) {
 // Include database connection
 require_once 'includes/db_connection.php';
 
-$user_id = $_SESSION['user']['id'];
+$user_id = $_SESSION['user']['user_id'];
 $success = false;
 $error_message = '';
 
@@ -19,7 +19,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $order_id = $_GET['id'];
     
     // Verify the order belongs to the logged-in user
-    $stmt = $conn->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
+    $stmt = $conn->prepare("SELECT * FROM orders WHERE order_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $order_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -30,7 +30,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         // Check if order is in a cancellable state (not delivered or already cancelled)
         if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled') {
             // Update order status to cancelled (without updated_at field)
-            $stmt = $conn->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE orders SET status = 'cancelled' WHERE order_id = ?");
             $stmt->bind_param("i", $order_id);
             
             if ($stmt->execute()) {

@@ -3,7 +3,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Include Product model
+// Use Product model for all CRUD operations
 require_once 'models/Product.php';
 require_once 'includes/notifications.php';
 
@@ -81,6 +81,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     } catch (PDOException $e) {
         setErrorToast("Database error: " . $e->getMessage());
     }
+}
+
+// When updating a product's price, also update all related order_items and recalculate order totals
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
+    $product_id = $_POST['product_id'];
+    $new_price = $_POST['price'];
+
+    // Update product price
+    $stmt = $db->prepare("UPDATE products SET price = ? WHERE product_id = ?");
+    $stmt->execute([$new_price, $product_id]);
+
+    // --- Update order_items price for this product ---
+    $stmt = $db->prepare("UPDATE order_items SET price = ? WHERE product_id = ?");
+    $stmt->execute([$new_price, $product_id]);
+
+    // --- Recalculate total_amount for all affected orders ---
+    // Get all order_ids that have this product in order_items
+    $stmt = $db->prepare("SELECT DISTINCT order_id FROM order_items WHERE product_id = ?");
+    $stmt->execute([$product_id]);
+    $order_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    foreach ($order_ids as $order_id) {
+        // Recalculate subtotal for this order
+        $stmt2 = $db->prepare("SELECT SUM(price * quantity) as subtotal FROM order_items WHERE order_id = ?");
+        $stmt2->execute([$order_id]);
+        $subtotal = (float)($stmt2->fetchColumn() ?: 0);
+
+        $shipping = 5.00;
+        $tax = $subtotal * 0.08;
+        $total = $subtotal + $shipping + $tax;
+
+        // Update orders table
+        $stmt3 = $db->prepare("UPDATE orders SET total_amount = ? WHERE order_id = ?");
+        $stmt3->execute([$total, $order_id]);
+    }
+    // --- END ---
+
+    // ...existing code for success/error messages...
 }
 
 // Handle new product creation
@@ -200,8 +238,7 @@ if ($viewMode === 'list') {
     $totalPages = ceil($totalProducts / $perPage);
     
     // Get products for current page
-    $stmt = $productObj->read($page, $perPage);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = $productObj->read($page, $perPage)->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // If we're in "new" mode, set viewMode
@@ -388,68 +425,34 @@ if (isset($_GET['new'])) {
                 </thead>
                 <tbody>
                     <?php if (count($products) > 0): ?>
-                        <?php foreach ($products as $product): ?>
-                            <tr>
-                                <td>
-                                    <div class="product-image">
-                                        <?php if (!empty($product['image']) && file_exists('../' . $product['image'])): ?>
-                                            <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                                        <?php else: ?>
-                                            <div class="no-image-small">
-                                                <i class="fas fa-image"></i>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="product-info">
-                                        <strong><?php echo htmlspecialchars($product['name']); ?></strong>
-                                        <span class="description"><?php echo htmlspecialchars(substr($product['description'], 0, 60)) . (strlen($product['description']) > 60 ? '...' : ''); ?></span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="product-price">$<?php echo htmlspecialchars(number_format($product['price'], 2)); ?></div>
-                                </td>
-                                <td>
-                                    <div class="product-stock <?php echo $product['stock'] <= 5 ? 'low-stock' : ''; ?>">
-                                        <?php echo htmlspecialchars($product['stock']); ?>
-                                        <?php if ($product['stock'] <= 5): ?>
-                                            <span class="stock-warning"><i class="fas fa-exclamation-triangle"></i> Low</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <form method="post" id="status-form-<?php echo $product['id']; ?>">
-                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                        <input type="hidden" name="toggle_active" value="1">
-                                        <button type="button" class="status-badge <?php echo $product['active'] ? 'status-active' : 'status-inactive'; ?>" onclick="submitStatusForm(<?php echo $product['id']; ?>)">
-                                            <?php if ($product['active']): ?>
-                                                <i class="fas fa-check-circle"></i> Active
-                                            <?php else: ?>
-                                                <i class="fas fa-times-circle"></i> Inactive
-                                            <?php endif; ?>
-                                        </button>
-                                    </form>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="?page=products&edit=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="?page=products&delete=<?php echo $product['id']; ?>" 
-                                           id="delete-product-<?php echo $product['id']; ?>"
-                                           class="btn btn-accent btn-sm delete-btn"
-                                           data-confirm="Are you sure you want to delete '<?php echo htmlspecialchars($product['name']); ?>'? This action cannot be undone."
-                                           data-confirm-title="Delete Product"
-                                           data-item-name="<?php echo htmlspecialchars($product['name']); ?>"
-                                           data-id="<?php echo $product['id']; ?>">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+    <?php foreach ($products as $row): ?>
+        <tr>
+            <td>
+                <div class="product-image">
+                    <img src="<?php echo htmlspecialchars($row['image'] ?: 'images/product-placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                </div>
+            </td>
+            <td><?php echo htmlspecialchars($row['name']); ?></td>
+            <td>$<?php echo number_format($row['price'], 2); ?></td>
+            <td><?php echo (int)$row['stock']; ?></td>
+            <td>
+                <span class="status-badge status-<?php echo $row['active'] == 1 ? 'active' : 'inactive'; ?>">
+                    <?php echo $row['active'] == 1 ? 'Active' : 'Inactive'; ?>
+                </span>
+            </td>
+            <td class="actions">
+                <div class="action-buttons">
+                    <a href="?page=products&edit=<?php echo $row['product_id']; ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="?page=products&delete=<?php echo $row['product_id']; ?>" class="btn btn-accent btn-sm delete-btn">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+<?php else: ?>
                         <tr>
                             <td colspan="6" class="text-center">
                                 <div class="empty-state">

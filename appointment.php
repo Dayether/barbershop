@@ -11,17 +11,30 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-// Database connection to fetch active barbers
+// Database connection to fetch active barbers and services
 try {
     $db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
+
     // Get all active barbers
-    $stmt = $db->prepare("SELECT id, name FROM barbers WHERE active = 1 ORDER BY name ASC");
+    $stmt = $db->prepare("SELECT barber_id, name FROM barbers WHERE active = 1 ORDER BY name ASC");
     $stmt->execute();
     $activeBarbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get all unique active services (no duplicates by name)
+    $stmt = $db->prepare("SELECT service_id, name, description, duration, price, image FROM services WHERE active = 1 ORDER BY name ASC, service_id ASC");
+    $stmt->execute();
+    $allServices = [];
+    $serviceNames = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $service) {
+        if (!in_array($service['name'], $serviceNames)) {
+            $allServices[] = $service;
+            $serviceNames[] = $service['name'];
+        }
+    }
 } catch (PDOException $e) {
     $activeBarbers = [];
+    $allServices = [];
     // Handle error silently - will show "Any Available Barber" option only
 }
 ?>
@@ -117,73 +130,27 @@ try {
                             <h3><i class="fas fa-list-ul"></i> Select Your Service</h3>
                             
                             <div class="service-options" id="service-options">
+                                <?php foreach ($allServices as $i => $service): ?>
                                 <div class="service-option">
-                                    <input type="radio" name="service" id="service-1" value="Classic Haircut" data-duration="45" data-price="30" checked>
-                                    <label for="service-1">
+                                    <input type="radio" name="service_id" id="service-<?php echo $service['service_id']; ?>" value="<?php echo $service['service_id']; ?>" data-duration="<?php echo htmlspecialchars($service['duration']); ?>" data-price="<?php echo htmlspecialchars($service['price']); ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
+                                    <label for="service-<?php echo $service['service_id']; ?>">
                                         <div class="service-image">
-                                            <img src="images/services/haircut.jpg" alt="Classic Haircut">
+                                            <img src="<?php echo !empty($service['image']) ? htmlspecialchars($service['image']) : 'images/services/default.jpg'; ?>" alt="<?php echo htmlspecialchars($service['name']); ?>">
                                         </div>
                                         <div class="service-icon"><i class="fas fa-cut"></i></div>
                                         <div class="service-details">
-                                            <h4>Classic Haircut</h4>
+                                            <h4><?php echo htmlspecialchars($service['name']); ?></h4>
                                             <div class="service-meta">
-                                                <span class="duration"><i class="far fa-clock"></i> 45 min</span>
-                                                <span class="price">$30</span>
+                                                <span class="duration"><i class="far fa-clock"></i> <?php echo htmlspecialchars($service['duration']); ?> min</span>
+                                                <span class="price">$<?php echo htmlspecialchars(number_format($service['price'], 2)); ?></span>
                                             </div>
+                                            <?php if (!empty($service['description'])): ?>
+                                                <div class="service-desc"><?php echo htmlspecialchars($service['description']); ?></div>
+                                            <?php endif; ?>
                                         </div>
                                     </label>
                                 </div>
-                                
-                                <div class="service-option">
-                                    <input type="radio" name="service" id="service-2" value="Beard Trim" data-duration="30" data-price="25">
-                                    <label for="service-2">
-                                        <div class="service-image">
-                                            <img src="images/services/beard.jpg" alt="Beard Trim">
-                                        </div>
-                                        <div class="service-icon"><i class="fas fa-beard"></i></div>
-                                        <div class="service-details">
-                                            <h4>Beard Trim</h4>
-                                            <div class="service-meta">
-                                                <span class="duration"><i class="far fa-clock"></i> 30 min</span>
-                                                <span class="price">$25</span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                                
-                                <div class="service-option">
-                                    <input type="radio" name="service" id="service-3" value="Hot Towel Shave" data-duration="45" data-price="35">
-                                    <label for="service-3">
-                                        <div class="service-image">
-                                            <img src="images/services/shave.jpg" alt="Hot Towel Shave">
-                                        </div>
-                                        <div class="service-icon"><i class="fas fa-spa"></i></div>
-                                        <div class="service-details">
-                                            <h4>Hot Towel Shave</h4>
-                                            <div class="service-meta">
-                                                <span class="duration"><i class="far fa-clock"></i> 45 min</span>
-                                                <span class="price">$35</span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                                
-                                <div class="service-option">
-                                    <input type="radio" name="service" id="service-4" value="Complete Package" data-duration="90" data-price="75">
-                                    <label for="service-4">
-                                        <div class="service-image">
-                                            <img src="images/services/package.jpg" alt="Complete Package">
-                                        </div>
-                                        <div class="service-icon"><i class="fas fa-gem"></i></div>
-                                        <div class="service-details">
-                                            <h4>Complete Package</h4>
-                                            <div class="service-meta">
-                                                <span class="duration"><i class="far fa-clock"></i> 90 min</span>
-                                                <span class="price">$75</span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
                             
                             <div class="form-nav">
@@ -218,13 +185,13 @@ try {
                                 </div>
                                 
                                 <div class="form-group barber-selection">
-                                    <label for="barber">Choose Barber (Optional)</label>
+                                    <label for="barber_id">Choose Barber (Optional)</label>
                                     <div class="input-icon-wrapper">
                                         <i class="fas fa-user-tie input-icon"></i>
-                                        <select id="barber" name="barber">
+                                        <select id="barber_id" name="barber_id">
                                             <option value="">Any Available Barber</option>
                                             <?php foreach($activeBarbers as $barber): ?>
-                                                <option value="<?php echo htmlspecialchars($barber['name']); ?>"><?php echo htmlspecialchars($barber['name']); ?></option>
+                                                <option value="<?php echo (int)$barber['barber_id']; ?>"><?php echo htmlspecialchars($barber['name']); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -498,7 +465,7 @@ try {
             function validateStep(step) {
                 switch(step) {
                     case 0: // Service selection
-                        const selectedService = document.querySelector('input[name="service"]:checked');
+                        const selectedService = document.querySelector('input[name="service_id"]:checked');
                         if (!selectedService) {
                             iziToast.warning({
                                 title: 'Service Required',
@@ -574,7 +541,7 @@ try {
             function showStepNotification(step) {
                 switch(step) {
                     case 1:
-                        const serviceName = document.querySelector('input[name="service"]:checked').value;
+                        const serviceName = document.querySelector('input[name="service_id"]:checked').value;
                         iziToast.success({
                             title: 'Service Selected',
                             message: `You've selected: ${serviceName}`,
@@ -600,63 +567,62 @@ try {
                 }
             }
 
-            // Function to load time slots based on selected date
+            // Replace loadTimeSlots function with AJAX version
             function loadTimeSlots(date) {
                 const timeSlotsContainer = document.getElementById('time-slots');
                 timeSlotsContainer.innerHTML = '<div class="time-slots-loading"><i class="fas fa-spinner fa-pulse"></i><span>Loading available time slots...</span></div>';
-                
-                // Get the selected service duration
-                const selectedService = document.querySelector('input[name="service"]:checked');
-                const serviceDuration = selectedService ? parseInt(selectedService.dataset.duration) : 30;
-                
-                // Get selected barber if any
-                const selectedBarber = document.getElementById('barber').value;
 
-                // Simulate AJAX call to fetch available time slots
-                setTimeout(() => {
-                    // In a real implementation, this would be an AJAX call to the server
-                    // to get the actual available time slots based on date, service duration, and barber
-                    
-                    const availableTimes = generateTimeSlots(date, serviceDuration, selectedBarber);
-                    
-                    if (availableTimes.length > 0) {
-                        timeSlotsContainer.innerHTML = '';
-                        
-                        availableTimes.forEach(time => {
-                            const timeSlot = document.createElement('div');
-                            timeSlot.className = 'time-slot';
-                            timeSlot.innerHTML = `
-                                <input type="radio" name="appointment-time" id="time-${time.replace(':', '')}" value="${time}">
-                                <label for="time-${time.replace(':', '')}">
-                                    <i class="far fa-clock"></i> ${time}
-                                </label>
-                            `;
-                            timeSlotsContainer.appendChild(timeSlot);
-                        });
-                        
-                        // Add click event for time slots
-                        const timeSlots = document.querySelectorAll('.time-slot input');
-                        timeSlots.forEach(slot => {
-                            slot.addEventListener('change', function() {
-                                document.querySelectorAll('.time-slot').forEach(el => {
-                                    el.classList.remove('selected');
-                                });
-                                
-                                if (this.checked) {
-                                    this.parentElement.classList.add('selected');
-                                }
+                const selectedService = document.querySelector('input[name="service_id"]:checked');
+                const serviceId = selectedService ? selectedService.value : '';
+                const selectedBarber = document.getElementById('barber_id').value;
+
+                // Fetch unavailable slots from the server
+                fetch('unavailable_slots.php?date=' + encodeURIComponent(date) + '&service_id=' + encodeURIComponent(serviceId) + '&barber_id=' + encodeURIComponent(selectedBarber))
+                    .then(response => response.json())
+                    .then(data => {
+                        const unavailable = data.unavailable || [];
+                        const baseSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'];
+                        let availableTimes = baseSlots.filter(slot => !unavailable.includes(slot));
+
+                        if (availableTimes.length > 0) {
+                            timeSlotsContainer.innerHTML = '';
+                            availableTimes.forEach(time => {
+                                const timeSlot = document.createElement('div');
+                                timeSlot.className = 'time-slot';
+                                timeSlot.innerHTML = `
+                                    <input type="radio" name="appointment-time" id="time-${time.replace(':', '')}" value="${time}">
+                                    <label for="time-${time.replace(':', '')}">
+                                        <i class="far fa-clock"></i> ${time}
+                                    </label>
+                                `;
+                                timeSlotsContainer.appendChild(timeSlot);
                             });
-                        });
-                    } else {
-                        timeSlotsContainer.innerHTML = '<div class="no-slots-message"><i class="fas fa-exclamation-circle"></i> No available time slots for this date. Please select another date.</div>';
-                        
-                        iziToast.warning({
-                            title: 'No Available Slots',
-                            message: 'All slots are booked for this date. Please select another date.',
-                            icon: 'fas fa-calendar-times'
-                        });
-                    }
-                }, 1000);
+                            
+                            // Add click event for time slots
+                            const timeSlots = document.querySelectorAll('.time-slot input');
+                            timeSlots.forEach(slot => {
+                                slot.addEventListener('change', function() {
+                                    document.querySelectorAll('.time-slot').forEach(el => {
+                                        el.classList.remove('selected');
+                                    });
+                                    
+                                    if (this.checked) {
+                                        this.parentElement.classList.add('selected');
+                                    }
+                                });
+                            });
+                        } else {
+                            timeSlotsContainer.innerHTML = '<div class="no-slots-message"><i class="fas fa-exclamation-circle"></i> No available time slots for this date. Please select another date.</div>';
+                            iziToast.warning({
+                                title: 'No Available Slots',
+                                message: 'All slots are booked for this date. Please select another date.',
+                                icon: 'fas fa-calendar-times'
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        timeSlotsContainer.innerHTML = '<div class="no-slots-message"><i class="fas fa-exclamation-circle"></i> Error loading time slots.</div>';
+                    });
             }
 
             // Function to generate time slots (in a real app, this would come from the server)
@@ -686,14 +652,14 @@ try {
 
             // Update summary before confirmation
             function updateSummary() {
-                const selectedService = document.querySelector('input[name="service"]:checked');
+                const selectedService = document.querySelector('input[name="service_id"]:checked');
                 const serviceName = selectedService ? selectedService.value : '';
                 const servicePrice = selectedService ? selectedService.dataset.price : '0';
                 
                 const appointmentDate = document.getElementById('appointment-date').value;
                 const appointmentTime = document.querySelector('input[name="appointment-time"]:checked')?.value || '';
                 
-                const barber = document.getElementById('barber').value || 'Any Available Barber';
+                const barber = document.getElementById('barber_id').value || 'Any Available Barber';
                 const name = document.getElementById('name').value;
                 const email = document.getElementById('email').value;
                 const phone = document.getElementById('phone').value;
@@ -724,6 +690,8 @@ try {
                 return re.test(String(email).toLowerCase());
             }
             
+            // Remove or comment out this block to allow normal form submission:
+            /*
             // Handle form submission
             const appointmentForm = document.getElementById('appointment-form');
             appointmentForm.addEventListener('submit', function(e) {
@@ -763,7 +731,7 @@ try {
                             
                             // Update confirmation details
                             document.getElementById('booking-reference').textContent = bookingRef;
-                            document.getElementById('confirmation-service').textContent = document.querySelector('input[name="service"]:checked').value;
+                            document.getElementById('confirmation-service').textContent = document.querySelector('input[name="service_id"]:checked').value;
                             document.getElementById('confirmation-datetime').textContent = 
                                 document.getElementById('appointment-date').value + ' at ' + 
                                 document.querySelector('input[name="appointment-time"]:checked').value;
@@ -782,6 +750,7 @@ try {
                     });
                 }, 2000);
             });
+            */
             
             // Handle input validation on change
             document.querySelectorAll('input, select, textarea').forEach(element => {
@@ -791,7 +760,7 @@ try {
             });
             
             // Service selection handler with toast notification
-            document.querySelectorAll('input[name="service"]').forEach(service => {
+            document.querySelectorAll('input[name="service_id"]').forEach(service => {
                 service.addEventListener('change', function() {
                     if (this.checked) {
                         const serviceName = this.value;
@@ -808,7 +777,7 @@ try {
             });
             
             // Handle barber selection change
-            document.getElementById('barber').addEventListener('change', function() {
+            document.getElementById('barber_id').addEventListener('change', function() {
                 const selectedDate = document.getElementById('appointment-date').value;
                 if (selectedDate) {
                     iziToast.info({
@@ -821,5 +790,20 @@ try {
             });
         });
     </script>
+    <?php
+    // Show server-side error if set
+    if (isset($_SESSION['appointment_error'])) {
+        echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                iziToast.error({
+                    title: "Booking Error",
+                    message: "' . addslashes($_SESSION['appointment_error']) . '",
+                    icon: "fas fa-times-circle"
+                });
+            });
+        </script>';
+        unset($_SESSION['appointment_error']);
+    }
+    ?>
 </body>
 </html>

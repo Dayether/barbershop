@@ -35,8 +35,9 @@ class UserProfile {
      */
     private function fetchUserData() {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
-            $stmt->execute([$this->user_id]);
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE user_id = :user_id");
+            $stmt->bindParam(':user_id', $_SESSION['user']['user_id']);
+            $stmt->execute();
             $this->user = $stmt->fetch();
             
             if (!$this->user) {
@@ -66,7 +67,7 @@ class UserProfile {
         }
         
         try {
-            $stmt = $this->db->prepare("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE users SET name = ?, email = ?, phone = ? WHERE user_id = ?");
             $result = $stmt->execute([
                 $data['name'], 
                 $data['email'], 
@@ -109,7 +110,7 @@ class UserProfile {
         } else {
             // Check if email is already in use by another user
             try {
-                $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+                $stmt = $this->db->prepare("SELECT user_id FROM users WHERE email = ? AND user_id != ?");
                 $stmt->execute([$data['email'], $this->user_id]);
                 if ($stmt->rowCount() > 0) {
                     $this->errors[] = "Email already in use by another account";
@@ -162,7 +163,7 @@ class UserProfile {
             $relativeUploadPath = 'uploads/profiles/' . $newFilename;
             
             try {
-                $stmt = $this->db->prepare("UPDATE users SET profile_pic = ? WHERE id = ?");
+                $stmt = $this->db->prepare("UPDATE users SET profile_pic = ? WHERE user_id = ?");
                 if ($stmt->execute([$relativeUploadPath, $this->user_id])) {
                     // Update session data
                     $_SESSION['user']['profile_pic'] = $relativeUploadPath;
@@ -217,7 +218,7 @@ class UserProfile {
             $hashedPassword = password_hash($data['new_password'], PASSWORD_DEFAULT);
             
             // Update the password
-            $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
             if ($stmt->execute([$hashedPassword, $this->user_id])) {
                 // Set success notification
                 $this->setSuccessMessage('Password changed successfully!');
@@ -244,7 +245,7 @@ class UserProfile {
         
         // Verify current password
         try {
-            $stmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT password FROM users WHERE user_id = ?");
             $stmt->execute([$this->user_id]);
             $userPass = $stmt->fetchColumn();
             
@@ -301,7 +302,7 @@ class UserProfile {
                 }
                 
                 // Update the database to set default picture
-                $stmt = $this->db->prepare("UPDATE users SET profile_pic = 'uploads/default-profile.jpg' WHERE id = ?");
+                $stmt = $this->db->prepare("UPDATE users SET profile_pic = 'uploads/default-profile.jpg' WHERE user_id = ?");
                 if ($stmt->execute([$this->user_id])) {
                     // Update session data
                     $_SESSION['user']['profile_pic'] = 'uploads/default-profile.jpg';
@@ -321,7 +322,7 @@ class UserProfile {
 }
 
 // Initialize profile handler
-$profileHandler = new UserProfile($_SESSION['user']['id']);
+$profileHandler = new UserProfile($_SESSION['user']['user_id']); // FIX: use 'user_id' not 'id'
 $user = $profileHandler->getUserData();
 
 // Handle form submissions

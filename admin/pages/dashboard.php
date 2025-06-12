@@ -160,7 +160,28 @@ $profitLossRevenues = json_encode($profitLossData['revenues']);
                                         <span class="email"><?php echo htmlspecialchars($appointment['client_email']); ?></span>
                                     </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($appointment['service']); ?></td>
+                                <td>
+                                    <?php
+                                    // Display service name if available, fallback to service_id, fallback to empty string
+                                    if (!empty($appointment['service_name'])) {
+                                        echo htmlspecialchars($appointment['service_name']);
+                                    } elseif (!empty($appointment['service_id'])) {
+                                        // Try to fetch the service name from the database if not present in the row
+                                        try {
+                                            $db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
+                                            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                                            $stmt = $db->prepare("SELECT name FROM services WHERE service_id = ?");
+                                            $stmt->execute([$appointment['service_id']]);
+                                            $service = $stmt->fetch(PDO::FETCH_ASSOC);
+                                            echo $service ? htmlspecialchars($service['name']) : htmlspecialchars($appointment['service_id']);
+                                        } catch (Exception $e) {
+                                            echo htmlspecialchars($appointment['service_id']);
+                                        }
+                                    } else {
+                                        echo '';
+                                    }
+                                    ?>
+                                </td>
                                 <td>
                                     <?php echo date('M d, Y', strtotime($appointment['appointment_date'])); ?> at
                                     <?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?>

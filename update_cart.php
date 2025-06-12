@@ -1,5 +1,6 @@
 <?php
 session_start();
+header('Content-Type: application/json');
 
 /**
  * Cart Handler class using OOP principles
@@ -277,5 +278,5 @@ try {
 }
 
 // Return JSON response
-header('Content-Type: application/json');
 echo json_encode($response);
+exit;

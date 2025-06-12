@@ -4,7 +4,7 @@ class User {
     private $table = 'users';
     
     // User properties
-    public $id;
+    public $user_id;
     public $name;
     public $email;
     public $password;
@@ -57,7 +57,7 @@ class User {
     // Login user
     public function login($email, $password) {
         // Query to check if email exists
-        $query = "SELECT id, name, email, password, profile_pic, account_type 
+        $query = "SELECT user_id, name, email, password, profile_pic, account_type 
                   FROM " . $this->table . " 
                   WHERE email = :email";
         
@@ -77,7 +77,7 @@ class User {
                 // Verify password
                 if (password_verify($password, $row['password'])) {
                     // Set properties
-                    $this->id = $row['id'];
+                    $this->user_id = $row['user_id'];
                     $this->name = $row['name'];
                     $this->email = $row['email'];
                     $this->profile_pic = $row['profile_pic'] ?: 'images/default-profile.png';
@@ -96,13 +96,19 @@ class User {
     
     // Check if email exists
     public function emailExists($email) {
-        // Query to check if email exists
-        $query = "SELECT id FROM " . $this->table . " WHERE email = :email";
-        
+        $query = "SELECT user_id FROM users WHERE email = :email LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();
-        
-        return $stmt->rowCount() > 0;
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
+    
+    // Get user by ID
+    public function getById($user_id) {
+        $query = "SELECT * FROM users WHERE user_id = :user_id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

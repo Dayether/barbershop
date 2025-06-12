@@ -10,7 +10,35 @@ if (!isset($_SESSION['user'])) {
 // Include database connection
 require_once 'includes/db_connection.php';
 
-$user_id = $_SESSION['user']['id'];
+$user_id = $_SESSION['user']['user_id'];
+
+// Handle appointment cancellation (set status to 'cancelled' instead of deleting)
+if (isset($_GET['cancel_id']) && is_numeric($_GET['cancel_id'])) {
+    $cancel_id = intval($_GET['cancel_id']);
+    // Only allow cancelling user's own pending/confirmed appointments
+    $stmt = $conn->prepare("UPDATE appointments SET status = 'cancelled' WHERE appointment_id = ? AND user_id = ? AND status IN ('pending', 'confirmed')");
+    $stmt->bind_param("ii", $cancel_id, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    // Optionally, add to appointment_history
+    // $conn->query("INSERT INTO appointment_history (appointment_id, action, notes, user_id) VALUES ($cancel_id, 'cancel', 'Cancelled by user', $user_id)");
+    header("Location: my_appointments.php?cancelled=1");
+    exit;
+}
+
+// Handle appointment deletion (user can delete cancelled appointments)
+if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
+    $delete_id = intval($_GET['delete_id']);
+    // Only allow deleting user's own cancelled appointments
+    $stmt = $conn->prepare("DELETE FROM appointments WHERE appointment_id = ? AND user_id = ? AND status = 'cancelled'");
+    $stmt->bind_param("ii", $delete_id, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    // Optionally, also delete related appointment_history entries
+    // $conn->query("DELETE FROM appointment_history WHERE appointment_id = $delete_id");
+    header("Location: my_appointments.php?deleted=1");
+    exit;
+}
 
 // Get appointments for this user - optimized query with better structure
 $appointments = [];
@@ -29,12 +57,12 @@ if ($status_filter && in_array($status_filter, ['pending', 'confirmed', 'complet
 }
 
 // Build query with proper indexing hints and join optimization
-$query = "SELECT a.id, a.appointment_date, a.appointment_time, a.status, a.notes, 
-          s.name AS service_name, s.duration, s.price, s.id AS service_id,
-          b.name AS barber_name, b.id AS barber_id
+$query = "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.notes, 
+          s.name AS service_name, s.duration, s.price, s.service_id,
+          b.name AS barber_name, b.barber_id
           FROM appointments a 
-          LEFT JOIN services s ON a.service = s.id 
-          LEFT JOIN barbers b ON a.barber = b.id 
+          LEFT JOIN services s ON a.service_id = s.service_id 
+          LEFT JOIN barbers b ON a.barber_id = b.barber_id 
           $where_clause
           ORDER BY 
             CASE 
@@ -140,7 +168,7 @@ foreach ($appointments as $appointment) {
                 <a href="my_appointments.php" class="tab active">
                     <i class="fas fa-calendar-alt"></i> <span>My Appointments</span>
                 </a>
-                <a href="profile.php#orders" class="tab">
+                <a href="orders.php" class="tab">
                     <i class="fas fa-shopping-bag"></i> <span>My Orders</span>
                 </a>
             </div>
@@ -233,10 +261,10 @@ foreach ($appointments as $appointment) {
                                 
                                 <?php if ($appointment['status'] == 'confirmed' || $appointment['status'] == 'pending'): ?>
                                     <div class="appointment-actions">
-                                        <a href="reschedule_appointment.php?id=<?php echo $appointment['id']; ?>" class="btn btn-sm btn-outline">
+                                        <a href="reschedule_appointment.php?id=<?php echo $appointment['appointment_id']; ?>" class="btn btn-sm btn-outline">
                                             <i class="fas fa-calendar-plus"></i> Reschedule
                                         </a>
-                                        <a href="#" class="btn btn-sm btn-danger" onclick="confirmCancelAppointment(<?php echo $appointment['id']; ?>)">
+                                        <a href="#" class="btn btn-sm btn-danger" onclick="confirmCancelAppointment(<?php echo $appointment['appointment_id']; ?>)">
                                             <i class="fas fa-times-circle"></i> Cancel
                                         </a>
                                     </div>
@@ -245,8 +273,14 @@ foreach ($appointments as $appointment) {
                                         <a href="book_again.php?service_id=<?php echo $appointment['service_id']; ?>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-redo"></i> Book Again
                                         </a>
-                                        <a href="review.php?appointment_id=<?php echo $appointment['id']; ?>" class="btn btn-sm btn-outline">
+                                        <a href="review.php?appointment_id=<?php echo $appointment['appointment_id']; ?>" class="btn btn-sm btn-outline">
                                             <i class="fas fa-star"></i> Leave Review
+                                        </a>
+                                    </div>
+                                <?php elseif ($appointment['status'] == 'cancelled'): ?>
+                                    <div class="appointment-actions">
+                                        <a href="#" class="btn btn-sm btn-danger" onclick="confirmDeleteAppointment(<?php echo $appointment['appointment_id']; ?>)">
+                                            <i class="fas fa-trash"></i> Delete
                                         </a>
                                     </div>
                                 <?php endif; ?>
@@ -271,5 +305,100 @@ foreach ($appointments as $appointment) {
     <?php include 'includes/footer.php'; ?>
 
     <script src="js/my_appointments.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enable dropdown and quick filter functionality
+        const statusFilter = document.getElementById('status-filter');
+        const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+        const appointmentCards = document.querySelectorAll('.appointment-card');
+        const filteredCount = document.getElementById('filtered-count');
+        const totalCount = document.querySelector('.total-count');
+        const today = new Date().toISOString().slice(0, 10);
+
+        function filterAppointments(filter) {
+            let count = 0;
+            appointmentCards.forEach(card => {
+                const status = card.querySelector('.appointment-status').textContent.trim().toLowerCase();
+                const date = card.querySelector('.date-value').textContent;
+                let show = false;
+
+                if (filter === 'all') {
+                    show = true;
+                } else if (filter === 'upcoming') {
+                    // Compare appointment date to today
+                    const cardDate = new Date(card.querySelector('.date-value').textContent);
+                    show = (status === 'pending' || status === 'confirmed') && cardDate >= new Date(today);
+                } else {
+                    show = status === filter;
+                }
+
+                card.style.display = show ? '' : 'none';
+                if (show) count++;
+            });
+            filteredCount.textContent = count;
+        }
+
+        // Dropdown filter
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                const filter = this.value;
+                quickFilterBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
+                filterAppointments(filter);
+            });
+        }
+
+        // Quick filter buttons
+        quickFilterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                quickFilterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.dataset.filter;
+                if (statusFilter) statusFilter.value = filter;
+                filterAppointments(filter);
+            });
+        });
+
+        // Initialize filter to "all"
+        filterAppointments('all');
+
+        // Add confirmCancelAppointment function
+        window.confirmCancelAppointment = function(appointmentId) {
+            if (confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
+                window.location.href = 'my_appointments.php?cancel_id=' + encodeURIComponent(appointmentId);
+            }
+        };
+
+        // Add confirmDeleteAppointment function
+        window.confirmDeleteAppointment = function(appointmentId) {
+            if (confirm('Are you sure you want to permanently delete this cancelled appointment?')) {
+                window.location.href = 'my_appointments.php?delete_id=' + encodeURIComponent(appointmentId);
+            }
+        };
+    });
+    </script>
+    <?php if (isset($_GET['cancelled'])): ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        iziToast.success({
+            title: 'Cancelled',
+            message: 'Appointment cancelled successfully.',
+            icon: 'fas fa-check-circle'
+        });
+    });
+    </script>
+    <?php endif; ?>
+    <?php if (isset($_GET['deleted'])): ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        iziToast.success({
+            title: 'Deleted',
+            message: 'Appointment deleted successfully.',
+            icon: 'fas fa-check-circle'
+        });
+    });
+    </script>
+    <?php endif; ?>
 </body>
 </html>

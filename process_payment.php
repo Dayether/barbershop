@@ -108,7 +108,7 @@ class OrderProcessor {
                 'message' => 'Your cart is empty. Please add products before checkout.'
             ];
         }
-        
+
         // Validate form data
         $validationErrors = $this->validateFormData($orderData);
         if (!empty($validationErrors)) {
@@ -118,23 +118,25 @@ class OrderProcessor {
                 'errors' => $validationErrors
             ];
         }
-        
+
         try {
-            // Begin transaction for data consistency
             $this->db->beginTransaction();
-            
-            // Generate unique order reference
+
             $orderReference = 'ORD-' . strtoupper(uniqid());
-            
-            // Get user ID from session
-            $userId = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
-            
-            // Get total amount
-            $totalAmount = floatval($orderData['total_amount']);
-            
-            // Create order record
+            $userId = isset($_SESSION['user']['user_id']) ? $_SESSION['user']['user_id'] : null;
+
+            // Calculate totals
+            $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+            $subtotal = 0;
+            foreach ($cart as $item) {
+                $subtotal += $item['price'] * $item['quantity'];
+            }
+            $shipping = 5.00;
+            $tax = $subtotal * 0.08;
+            $totalAmount = $subtotal + $shipping + $tax;
+
+            // Insert order
             $stmt = $this->db->prepare("INSERT INTO orders (order_reference, user_id, total_amount, status, first_name, last_name, email, address, city, zip, country, phone) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)");
-            
             $stmt->execute([
                 $orderReference,
                 $userId,
@@ -148,33 +150,36 @@ class OrderProcessor {
                 $orderData['country'],
                 $orderData['phone']
             ]);
-            
-            // Get the new order ID
+
             $orderId = $this->db->lastInsertId();
-            
-            // Insert order items
+
+            // --- FIX: Insert order items using correct cart structure and keys ---
             $itemStmt = $this->db->prepare("INSERT INTO order_items (order_id, product_id, name, quantity, price) VALUES (?, ?, ?, ?, ?)");
-            
-            foreach ($_SESSION['cart'] as $item) {
-                $itemStmt->execute([
-                    $orderId,
-                    $item['id'],
-                    $item['name'],
-                    $item['quantity'],
-                    $item['price']
-                ]);
-                
-                // Update product stock (optional, depending on business logic)
-                $stockStmt = $this->db->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?");
-                $stockStmt->execute([$item['quantity'], $item['id'], $item['quantity']]);
+            foreach ($cart as $item) {
+                // Support both associative and numeric keys
+                $product_id = isset($item['id']) ? $item['id'] : (isset($item['product_id']) ? $item['product_id'] : null);
+                $name = isset($item['name']) ? $item['name'] : '';
+                $quantity = isset($item['quantity']) ? $item['quantity'] : 1;
+                $price = isset($item['price']) ? $item['price'] : 0;
+                if ($product_id !== null) {
+                    $itemStmt->execute([
+                        $orderId,
+                        $product_id,
+                        $name,
+                        $quantity,
+                        $price
+                    ]);
+                    // Optionally update stock
+                    $stockStmt = $this->db->prepare("UPDATE products SET stock = stock - ? WHERE product_id = ? AND stock >= ?");
+                    $stockStmt->execute([$quantity, $product_id, $quantity]);
+                }
             }
-            
-            // Commit the transaction
+            // --- END FIX ---
+
             $this->db->commit();
-            
-            // Clear the cart
+
             $_SESSION['cart'] = [];
-            
+
             return [
                 'success' => true,
                 'message' => 'Order placed successfully!',
@@ -182,11 +187,9 @@ class OrderProcessor {
                 'order_id' => $orderId,
                 'total' => $totalAmount
             ];
-            
+
         } catch (PDOException $e) {
-            // Rollback the transaction if an error occurs
             $this->db->rollBack();
-            
             return [
                 'success' => false,
                 'message' => 'An error occurred while processing your order. Please try again.',

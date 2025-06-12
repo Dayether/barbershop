@@ -10,14 +10,14 @@ if (!isset($_SESSION['user'])) {
 // Include database connection
 require_once 'includes/db_connection.php';
 
-$user_id = $_SESSION['user']['id'];
+$user_id = $_SESSION['user']['user_id'];
 $appointment_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $success = false;
 $error_message = '';
 
 // Verify that the appointment exists and belongs to this user
 if ($appointment_id > 0) {
-    $stmt = $conn->prepare("SELECT * FROM appointments WHERE id = ? AND user_id = ?");
+    $stmt = $conn->prepare("SELECT * FROM appointments WHERE appointment_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $appointment_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -37,7 +37,7 @@ if ($appointment_id > 0) {
             $error_message = "Cannot cancel completed appointments.";
         } else {
             // Update appointment status to cancelled
-            $update = $conn->prepare("UPDATE appointments SET status = 'cancelled' WHERE id = ?");
+            $update = $conn->prepare("UPDATE appointments SET status = 'cancelled' WHERE appointment_id = ?");
             $update->bind_param("i", $appointment_id);
             
             if ($update->execute()) {

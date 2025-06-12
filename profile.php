@@ -14,15 +14,16 @@ $password_success = '';
 $password_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user_id = $_SESSION['user']['id'];
+    // FIX: Use user_id instead of id
+    $user_id = $_SESSION['user']['user_id'];
     
     // Profile update
     if (isset($_POST['update_profile'])) {
         $name = $_POST['name'];
         $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
         
-        // Update name in database
-        $stmt = $conn->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
+        // FIX: Use user_id in SQL and binding
+        $stmt = $conn->prepare("UPDATE users SET name = ?, phone = ? WHERE user_id = ?");
         $stmt->bind_param("ssi", $name, $phone, $user_id);
         
         if ($stmt->execute()) {
@@ -42,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $new_password = $_POST['new_password'];
         $confirm_password = $_POST['confirm_password'];
         
-        // Verify current password
-        $stmt = $conn->prepare("SELECT password FROM users WHERE id = ?");
+        // FIX: Use user_id in SQL and binding
+        $stmt = $conn->prepare("SELECT password FROM users WHERE user_id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -55,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($new_password === $confirm_password) {
                 // Update password
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE users SET password = ? WHERE user_id = ?");
                 $stmt->bind_param("si", $hashed_password, $user_id);
                 
                 if ($stmt->execute()) {
@@ -99,8 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unlink($_SESSION['user']['profile_pic']);
                 }
                 
-                // Update profile pic in database
-                $stmt = $conn->prepare("UPDATE users SET profile_pic = ? WHERE id = ?");
+                // FIX: Use user_id in SQL and binding
+                $stmt = $conn->prepare("UPDATE users SET profile_pic = ? WHERE user_id = ?");
                 $stmt->bind_param("si", $filename, $user_id);
                 
                 if ($stmt->execute()) {
@@ -122,16 +123,14 @@ $user = $_SESSION['user'];
 
 // Fetch user appointments
 $appointments = [];
-$stmt = $conn->prepare("SELECT a.id, a.appointment_date, a.appointment_time, a.status, a.notes, 
-                        s.name as service_name, s.duration, s.price, 
-                        b.name as barber_name,
-                        s.id as service_id
-                        FROM appointments a 
-                        LEFT JOIN services s ON a.service = s.id 
-                        LEFT JOIN barbers b ON a.barber = b.id 
-                        WHERE a.user_id = ? 
-                        ORDER BY a.appointment_date DESC, a.appointment_time DESC");
-$stmt->bind_param("i", $user['id']);
+// FIX: Use user_id in SQL and binding
+$stmt = $conn->prepare('SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, s.service_id, s.name AS service_name, b.barber_id, b.name AS barber_name, a.notes
+    FROM appointments a
+    LEFT JOIN services s ON a.service_id = s.service_id
+    LEFT JOIN barbers b ON a.barber_id = b.barber_id
+    WHERE a.user_id = ?
+    ORDER BY a.appointment_date DESC, a.appointment_time DESC');
+$stmt->bind_param("i", $user['user_id']);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -146,14 +145,15 @@ try {
     // Check if orders table exists
     $result = $conn->query("SHOW TABLES LIKE 'orders'");
     if ($result->num_rows > 0) {
-        $stmt = $conn->prepare("SELECT o.id, o.created_at as order_date, o.total_amount, o.status, o.tracking_number, 
-                            COUNT(oi.id) as item_count 
+        // FIX: Use order_id and user_id in SQL and binding, and correct join
+        $stmt = $conn->prepare("SELECT o.order_id, o.created_at as order_date, o.total_amount, o.status, o.tracking_number, 
+                            COUNT(oi.order_item_id) as item_count 
                             FROM orders o 
-                            LEFT JOIN order_items oi ON o.id = oi.order_id 
+                            LEFT JOIN order_items oi ON o.order_id = oi.order_id 
                             WHERE o.user_id = ? 
-                            GROUP BY o.id
+                            GROUP BY o.order_id
                             ORDER BY o.created_at DESC");
-        $stmt->bind_param("i", $user['id']);
+        $stmt->bind_param("i", $user['user_id']);
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -163,7 +163,6 @@ try {
         $stmt->close();
     }
 } catch (Exception $e) {
-    // Orders functionality not fully implemented yet - just continue with empty orders array
     $orders = [];
 }
 ?>
@@ -395,10 +394,10 @@ try {
                                             
                                             <?php if ($appointment['status'] == 'confirmed' || $appointment['status'] == 'pending'): ?>
                                                 <div class="appointment-actions">
-                                                    <a href="reschedule_appointment.php?id=<?php echo $appointment['id']; ?>" class="btn btn-sm btn-outline">
+                                                    <a href="reschedule_appointment.php?id=<?php echo $appointment['appointment_id']; ?>" class="btn btn-sm btn-outline">
                                                         <i class="fas fa-calendar-plus"></i> Reschedule
                                                     </a>
-                                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmCancelAppointment(<?php echo $appointment['id']; ?>)">
+                                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmCancelAppointment(<?php echo $appointment['appointment_id']; ?>)">
                                                         <i class="fas fa-times-circle"></i> Cancel
                                                     </a>
                                                 </div>
@@ -407,7 +406,7 @@ try {
                                                     <a href="book_again.php?service_id=<?php echo $appointment['service_id']; ?>" class="btn btn-sm btn-primary">
                                                         <i class="fas fa-redo"></i> Book Again
                                                     </a>
-                                                    <a href="review.php?appointment_id=<?php echo $appointment['id']; ?>" class="btn btn-sm btn-outline">
+                                                    <a href="review.php?appointment_id=<?php echo $appointment['appointment_id']; ?>" class="btn btn-sm btn-outline">
                                                         <i class="fas fa-star"></i> Leave Review
                                                     </a>
                                                 </div>
@@ -467,7 +466,7 @@ try {
                                         <div class="order-card" data-status="<?php echo strtolower($order['status']); ?>">
                                             <div class="order-header">
                                                 <div class="order-id">
-                                                    <h4>Order #<?php echo $order['id']; ?></h4>
+                                                    <h4>Order #<?php echo $order['order_id']; ?></h4>
                                                     <span class="order-date"><?php echo date('F j, Y', strtotime($order['order_date'])); ?></span>
                                                 </div>
                                                 <div class="order-status-badge <?php echo strtolower($order['status']); ?>">
@@ -494,16 +493,16 @@ try {
                                                 </div>
                                                 
                                                 <div class="order-actions">
-                                                    <a href="order_details.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline">
+                                                    <a href="order_details.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-outline">
                                                         <i class="fas fa-eye"></i> View Details
                                                     </a>
                                                     <?php if ($order['status'] === 'shipped'): ?>
-                                                    <a href="track_order.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-primary">
+                                                    <a href="track_order.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-primary">
                                                         <i class="fas fa-map-marker-alt"></i> Track Order
                                                     </a>
                                                     <?php endif; ?>
                                                     <?php if ($order['status'] === 'delivered'): ?>
-                                                    <a href="reorder.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-secondary">
+                                                    <a href="reorder.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-secondary">
                                                         <i class="fas fa-redo"></i> Order Again
                                                     </a>
                                                     <?php endif; ?>

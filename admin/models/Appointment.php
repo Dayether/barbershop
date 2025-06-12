@@ -8,10 +8,10 @@ class Appointment {
     public $id;
     public $booking_reference;
     public $user_id;
-    public $service;
+    public $service_id;
     public $appointment_date;
     public $appointment_time;
-    public $barber;
+    public $barber_id;
     public $client_name;
     public $client_email;
     public $client_phone;
@@ -24,91 +24,16 @@ class Appointment {
         $this->conn = $db;
     }
 
-    // Read all appointments with optional pagination
-    public function read($page = 1, $per_page = 10) {
-        // Calculate offset for pagination
-        $offset = ($page - 1) * $per_page;
-        
-        // Create query
-        $query = "SELECT a.*, u.name as user_name 
-                  FROM " . $this->table . " a
-                  LEFT JOIN users u ON a.user_id = u.id
-                  ORDER BY a.appointment_date DESC, a.appointment_time DESC
-                  LIMIT :limit OFFSET :offset";
-        
-        // Prepare statement
-        $stmt = $this->conn->prepare($query);
-        
-        // Bind values
-        $stmt->bindParam(':limit', $per_page, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-        
-        // Execute query
-        $stmt->execute();
-        
-        return $stmt;
-    }
-
-    // Count total appointments
-    public function count() {
-        $query = "SELECT COUNT(*) as total FROM " . $this->table;
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        return $row['total'];
-    }
-
-    // Read single appointment
-    public function readSingle() {
-        // Create query
-        $query = "SELECT a.*, u.name as user_name 
-                 FROM " . $this->table . " a
-                 LEFT JOIN users u ON a.user_id = u.id
-                 WHERE a.id = :id";
-        
-        // Prepare statement
-        $stmt = $this->conn->prepare($query);
-        
-        // Bind ID
-        $stmt->bindParam(':id', $this->id);
-        
-        // Execute query
-        $stmt->execute();
-        
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if($row) {
-            // Set properties
-            $this->booking_reference = $row['booking_reference'];
-            $this->user_id = $row['user_id'];
-            $this->service = $row['service'];
-            $this->appointment_date = $row['appointment_date'];
-            $this->appointment_time = $row['appointment_time'];
-            $this->barber = $row['barber'];
-            $this->client_name = $row['client_name'];
-            $this->client_email = $row['client_email'];
-            $this->client_phone = $row['client_phone'];
-            $this->notes = $row['notes'];
-            $this->status = $row['status'];
-            $this->created_at = $row['created_at'];
-            
-            return true;
-        }
-        
-        return false;
-    }
-
     // Create appointment
     public function create() {
         // Create query
         $query = "INSERT INTO " . $this->table . " 
                   SET booking_reference = :booking_reference, 
                       user_id = :user_id,
-                      service = :service, 
+                      service_id = :service_id, 
                       appointment_date = :appointment_date,
                       appointment_time = :appointment_time,
-                      barber = :barber,
+                      barber_id = :barber_id,
                       client_name = :client_name,
                       client_email = :client_email,
                       client_phone = :client_phone,
@@ -121,10 +46,10 @@ class Appointment {
         // Clean data
         $this->booking_reference = htmlspecialchars(strip_tags($this->booking_reference));
         $this->user_id = $this->user_id ?? null;
-        $this->service = htmlspecialchars(strip_tags($this->service));
+        $this->service_id = htmlspecialchars(strip_tags($this->service_id));
         $this->appointment_date = htmlspecialchars(strip_tags($this->appointment_date));
         $this->appointment_time = htmlspecialchars(strip_tags($this->appointment_time));
-        $this->barber = htmlspecialchars(strip_tags($this->barber));
+        $this->barber_id = htmlspecialchars(strip_tags($this->barber_id));
         $this->client_name = htmlspecialchars(strip_tags($this->client_name));
         $this->client_email = htmlspecialchars(strip_tags($this->client_email));
         $this->client_phone = htmlspecialchars(strip_tags($this->client_phone));
@@ -139,10 +64,10 @@ class Appointment {
         // Bind data
         $stmt->bindParam(':booking_reference', $this->booking_reference);
         $stmt->bindParam(':user_id', $this->user_id);
-        $stmt->bindParam(':service', $this->service);
+        $stmt->bindParam(':service_id', $this->service_id);
         $stmt->bindParam(':appointment_date', $this->appointment_date);
         $stmt->bindParam(':appointment_time', $this->appointment_time);
-        $stmt->bindParam(':barber', $this->barber);
+        $stmt->bindParam(':barber_id', $this->barber_id);
         $stmt->bindParam(':client_name', $this->client_name);
         $stmt->bindParam(':client_email', $this->client_email);
         $stmt->bindParam(':client_phone', $this->client_phone);
@@ -161,57 +86,71 @@ class Appointment {
         return false;
     }
 
+    // Read single appointment by ID
+    public function readSingle() {
+        // FIX: Use appointment_id instead of id
+        $query = "SELECT a.*, s.name AS service_name, b.name AS barber_name
+                  FROM appointments a
+                  LEFT JOIN services s ON a.service_id = s.service_id
+                  LEFT JOIN barbers b ON a.barber_id = b.barber_id
+                  WHERE a.appointment_id = :id";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return false;
+        }
+
+        // Set properties (add more as needed)
+        $this->id = $row['appointment_id'];
+        $this->booking_reference = $row['booking_reference'];
+        $this->user_id = $row['user_id'];
+        $this->service = $row['service_id'];
+        $this->appointment_date = $row['appointment_date'];
+        $this->appointment_time = $row['appointment_time'];
+        $this->barber = $row['barber_id'];
+        $this->client_name = $row['client_name'];
+        $this->client_email = $row['client_email'];
+        $this->client_phone = $row['client_phone'];
+        $this->notes = $row['notes'];
+        $this->status = $row['status'];
+        $this->created_at = $row['created_at'];
+        // Optionally set service_name and barber_name
+        $this->service_name = $row['service_name'] ?? null;
+        $this->barber_name = $row['barber_name'] ?? null;
+
+        return true;
+    }
+
     // Update appointment
     public function update() {
-        // Create query
-        $query = "UPDATE " . $this->table . "
-                  SET service = :service, 
-                      appointment_date = :appointment_date,
-                      appointment_time = :appointment_time,
-                      barber = :barber,
-                      client_name = :client_name,
-                      client_email = :client_email,
-                      client_phone = :client_phone,
-                      notes = :notes,
-                      status = :status
-                  WHERE id = :id";
-        
-        // Prepare statement
+        $query = "UPDATE appointments SET 
+            service_id = :service_id,
+            appointment_date = :appointment_date,
+            appointment_time = :appointment_time,
+            barber_id = :barber_id,
+            client_name = :client_name,
+            client_email = :client_email,
+            client_phone = :client_phone,
+            notes = :notes,
+            status = :status
+            WHERE appointment_id = :appointment_id";
         $stmt = $this->conn->prepare($query);
-        
-        // Clean data
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $this->service = htmlspecialchars(strip_tags($this->service));
-        $this->appointment_date = htmlspecialchars(strip_tags($this->appointment_date));
-        $this->appointment_time = htmlspecialchars(strip_tags($this->appointment_time));
-        $this->barber = htmlspecialchars(strip_tags($this->barber));
-        $this->client_name = htmlspecialchars(strip_tags($this->client_name));
-        $this->client_email = htmlspecialchars(strip_tags($this->client_email));
-        $this->client_phone = htmlspecialchars(strip_tags($this->client_phone));
-        $this->notes = htmlspecialchars(strip_tags($this->notes));
-        $this->status = htmlspecialchars(strip_tags($this->status));
-        
-        // Bind data
-        $stmt->bindParam(':id', $this->id);
-        $stmt->bindParam(':service', $this->service);
+        $stmt->bindParam(':service_id', $this->service_id);
         $stmt->bindParam(':appointment_date', $this->appointment_date);
         $stmt->bindParam(':appointment_time', $this->appointment_time);
-        $stmt->bindParam(':barber', $this->barber);
+        $stmt->bindParam(':barber_id', $this->barber_id);
         $stmt->bindParam(':client_name', $this->client_name);
         $stmt->bindParam(':client_email', $this->client_email);
         $stmt->bindParam(':client_phone', $this->client_phone);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':status', $this->status);
-        
-        // Execute query
-        if($stmt->execute()) {
-            return true;
-        }
-        
-        // Print error if something goes wrong
-        printf("Error: %s.\n", $stmt->error);
-        
-        return false;
+        $stmt->bindParam(':appointment_id', $this->id);
+        return $stmt->execute();
     }
 
     // Delete appointment
@@ -339,3 +278,4 @@ class Appointment {
         return $stmt;
     }
 }
+?>

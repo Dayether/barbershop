@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'includes/db_connection.php';
+require_once 'includes/classes/Order.php';
 
 // For debugging - writes to file for easier troubleshooting
 function debug_log($message) {
@@ -131,8 +132,8 @@ try {
     
     // Get user ID if logged in
     $user_id = null;
-    if (isset($_SESSION['user']['id'])) {
-        $user_id = $_SESSION['user']['id'];
+    if (isset($_SESSION['user']['user_id'])) {
+        $user_id = $_SESSION['user']['user_id'];
         debug_log("Order associated with user ID: " . $user_id);
     }
     
@@ -143,66 +144,37 @@ try {
     // Status for new orders
     $status = 'pending';
 
-    // Insert order into database
-    $stmt = $conn->prepare("INSERT INTO orders (order_reference, user_id, first_name, last_name, email, address, city, zip, country, phone, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert order into database using Order class
+    $order = new Order($conn);
+    $order->order_reference = $order_reference;
+    $order->user_id = $user_id;
+    $order->first_name = $first_name;
+    $order->last_name = $last_name;
+    $order->email = $email;
+    $order->address = $address;
+    $order->city = $city;
+    $order->zip = $zip;
+    $order->country = $country;
+    $order->phone = $phone;
+    $order->total_amount = $order_total;
+    $order->status = $status;
     
-    $stmt->bind_param(
-        "sissssssssds", 
-        $order_reference, 
-        $user_id, 
-        $first_name, 
-        $last_name, 
-        $email, 
-        $address, 
-        $city, 
-        $zip, 
-        $country, 
-        $phone, 
-        $order_total,
-        $status
-    );
-    
-    if (!$stmt->execute()) {
-        throw new Exception("Failed to insert order: " . $stmt->error);
+    if (!$order->create()) {
+        throw new Exception("Failed to create order: " . $order->getLastError());
     }
     
-    // Get the order ID
-    $order_id = $conn->insert_id;
+    $order_id = $order->id;
     debug_log("Order created with ID: $order_id and reference: $order_reference");
     
-    // Insert order items
+    // Add items to order
     foreach ($order_items as $item) {
-        $product_id = isset($item['id']) ? (int)$item['id'] : 0;
-        $name = isset($item['name']) ? $item['name'] : 'Unknown Product';
-        $price = isset($item['price']) ? (float)$item['price'] : 0;
-        $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
-        
-        debug_log("Processing item: Product ID: $product_id, Name: $name, Price: $price, Quantity: $quantity");
-        
-        try {
-            $stmt = $conn->prepare("INSERT INTO order_items (order_id, product_id, name, price, quantity) VALUES (?, ?, ?, ?, ?)");
-            
-            if (!$stmt) {
-                throw new Exception("Failed to prepare statement: " . $conn->error);
-            }
-            
-            $stmt->bind_param("iisdi", $order_id, $product_id, $name, $price, $quantity);
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to insert order item: " . $stmt->error);
-            }
-        } catch (Exception $itemError) {
-            debug_log("Error inserting order item: " . $itemError->getMessage());
-            throw new Exception("Failed to save order item: " . $itemError->getMessage());
-        }
-        
-        // Update product stock if we have a valid product ID
-        if ($product_id > 0) {
-            $stmt = $conn->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?");
-            $stmt->bind_param("iii", $quantity, $product_id, $quantity);
-            $stmt->execute();
+        if (!$order->addItem($item['product_id'], $item['name'], $item['quantity'], $item['price'])) {
+            throw new Exception("Failed to add order item: " . $order->getLastError());
         }
     }
+    
+    // Recalculate total
+    $order->recalculateTotal();
     
     // Commit transaction
     $conn->commit();

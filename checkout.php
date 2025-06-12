@@ -19,8 +19,8 @@ foreach ($_SESSION['cart'] as $item) {
 // Get user data if logged in
 $user_data = [];
 if (isset($_SESSION['user'])) {
-    $stmt = $conn->prepare("SELECT first_name, last_name, email, phone, address, city, zip, country FROM users WHERE id = ?");
-    $stmt->bind_param("i", $_SESSION['user']['id']);
+    $stmt = $conn->prepare("SELECT first_name, last_name, email, phone, address, city, zip, country FROM users WHERE user_id = ?");
+    $stmt->bind_param("i", $_SESSION['user']['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
@@ -29,7 +29,7 @@ if (isset($_SESSION['user'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"></html>
 <head>
     <link rel="stylesheet" href="css/footer.css">
     <meta charset="UTF-8">
@@ -500,4 +500,4 @@ if (isset($_SESSION['user'])) {
         });
     </script>
 </body>
-</html> 
+</html>

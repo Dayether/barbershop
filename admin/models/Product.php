@@ -32,7 +32,7 @@ class Product {
         $offset = ($page - 1) * $perPage;
         
         // Create query with pagination
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY id DESC LIMIT :limit OFFSET :offset";
+        $query = "SELECT * FROM " . $this->table_name . " ORDER BY product_id DESC LIMIT :limit OFFSET :offset";
         
         // Prepare statement
         $stmt = $this->conn->prepare($query);
@@ -51,7 +51,7 @@ class Product {
      * Read single product by ID
      */
     public function readSingle() {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id = :id";
+        $query = "SELECT * FROM " . $this->table_name . " WHERE product_id = :id";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $this->id);
@@ -120,7 +120,7 @@ class Product {
         if (empty($this->image)) {
             $query = "UPDATE " . $this->table_name . " 
                       SET name = :name, description = :description, price = :price, stock = :stock, active = :active 
-                      WHERE id = :id";
+                      WHERE product_id = :id";
             
             $stmt = $this->conn->prepare($query);
             
@@ -135,7 +135,7 @@ class Product {
             // If image is changed
             $query = "UPDATE " . $this->table_name . " 
                       SET name = :name, description = :description, price = :price, image = :image, stock = :stock, active = :active 
-                      WHERE id = :id";
+                      WHERE product_id = :id";
             
             $stmt = $this->conn->prepare($query);
             
@@ -171,7 +171,7 @@ class Product {
     public function delete() {
         try {
             // Check if product exists first
-            $checkQuery = "SELECT id, image FROM " . $this->table_name . " WHERE id = :id";
+            $checkQuery = "SELECT product_id, image FROM " . $this->table_name . " WHERE product_id = :id";
             $checkStmt = $this->conn->prepare($checkQuery);
             $checkStmt->bindParam(':id', $this->id);
             $checkStmt->execute();
@@ -199,7 +199,7 @@ class Product {
             }
             
             // Perform the actual deletion
-            $deleteQuery = "DELETE FROM " . $this->table_name . " WHERE id = :id";
+            $deleteQuery = "DELETE FROM " . $this->table_name . " WHERE product_id = :id";
             $deleteStmt = $this->conn->prepare($deleteQuery);
             $deleteStmt->bindParam(':id', $this->id);
             
@@ -226,7 +226,7 @@ class Product {
      * Toggle product active status
      */
     public function toggleActive() {
-        $query = "UPDATE " . $this->table_name . " SET active = NOT active WHERE id = :id";
+        $query = "UPDATE " . $this->table_name . " SET active = NOT active WHERE product_id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $this->id);
         

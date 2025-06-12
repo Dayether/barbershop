@@ -145,16 +145,15 @@ class Dashboard {
     // Get latest appointments
     public function getLatestAppointments($limit = 5) {
         try {
+            // FIX: Use correct user_id column in join
             $query = "SELECT a.*, u.name as user_name 
                       FROM appointments a
-                      LEFT JOIN users u ON a.user_id = u.id
+                      LEFT JOIN users u ON a.user_id = u.user_id
                       ORDER BY a.created_at DESC
                       LIMIT :limit";
-                      
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return [];

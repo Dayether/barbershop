@@ -18,18 +18,21 @@ $appointment = null;
 if (isset($_GET['edit'])) {
     $viewMode = 'edit';
     $id = $_GET['edit'];
-    
+
     // Get appointment details using the model
     $appointmentObj->id = $id;
     if ($appointmentObj->readSingle()) {
+        // Populate $appointment array for the form
         $appointment = [
             'id' => $appointmentObj->id,
             'booking_reference' => $appointmentObj->booking_reference,
             'user_id' => $appointmentObj->user_id,
-            'service' => $appointmentObj->service,
+            'service' => $appointmentObj->service_id ?? $appointmentObj->service ?? '',
+            'service_id' => $appointmentObj->service_id ?? $appointmentObj->service ?? '',
             'appointment_date' => $appointmentObj->appointment_date,
             'appointment_time' => $appointmentObj->appointment_time,
-            'barber' => $appointmentObj->barber,
+            'barber' => $appointmentObj->barber_id ?? $appointmentObj->barber ?? '',
+            'barber_id' => $appointmentObj->barber_id ?? $appointmentObj->barber ?? '',
             'client_name' => $appointmentObj->client_name,
             'client_email' => $appointmentObj->client_email,
             'client_phone' => $appointmentObj->client_phone,
@@ -41,15 +44,19 @@ if (isset($_GET['edit'])) {
         setErrorToast("Appointment not found.");
         $viewMode = 'list';
     }
-    
-    // Get appointment history if in edit mode
-    if ($viewMode === 'edit') {
-        try {
-            $historyStmt = $appointmentObj->getHistory();
-            $history = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $history = [];
-        }
+}
+
+// Get services and barbers for dropdown menus (used in edit mode)
+if ($viewMode === 'edit') {
+    try {
+        $stmt = $db->query("SELECT service_id, name FROM services WHERE active = 1 ORDER BY service_id ASC");
+        $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $db->query("SELECT barber_id, name FROM barbers WHERE active = 1 ORDER BY barber_id ASC");
+        $barbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $services = [];
+        $barbers = [];
     }
 }
 
@@ -62,27 +69,39 @@ if (is_array($statusFilter)) {
 // Handle edit form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_appointment'])) {
     try {
-        // Collect form data and sanitize
         $appointmentObj->id = $_POST['appointment_id'];
-        $appointmentObj->service = htmlspecialchars($_POST['service']);
-        $appointmentObj->appointment_date = htmlspecialchars($_POST['appointment_date']);
-        $appointmentObj->appointment_time = htmlspecialchars($_POST['appointment_time']);
-        $appointmentObj->barber = htmlspecialchars($_POST['barber']);
-        $appointmentObj->client_name = htmlspecialchars($_POST['client_name']);
-        $appointmentObj->client_email = htmlspecialchars($_POST['client_email']);
-        $appointmentObj->client_phone = htmlspecialchars($_POST['client_phone']);
-        $appointmentObj->notes = htmlspecialchars($_POST['notes']);
-        $appointmentObj->status = htmlspecialchars($_POST['status']);
-        
-        // Update the appointment using model
+        $appointmentObj->service_id = $_POST['service'];
+        $appointmentObj->appointment_date = $_POST['appointment_date'];
+        $appointmentObj->appointment_time = $_POST['appointment_time'];
+        $appointmentObj->barber_id = $_POST['barber'];
+        $appointmentObj->client_name = $_POST['client_name'];
+        $appointmentObj->client_email = $_POST['client_email'];
+        $appointmentObj->client_phone = $_POST['client_phone'];
+        $appointmentObj->notes = $_POST['notes'];
+        $appointmentObj->status = $_POST['status'];
+
+        // Call update method (ensure Appointment model uses these properties)
         if ($appointmentObj->update()) {
-            // Add to appointment history
-            $history_notes = "Appointment details updated by admin";
-            $staffId = $_SESSION['user']['id'];
-            $appointmentObj->addHistory('update', $history_notes, null, $staffId);
-            
             setSuccessToast("Appointment updated successfully!");
-            $viewMode = 'list'; // Switch back to list view after update
+            // Refresh the $appointment array so the form shows updated values
+            $appointmentObj->readSingle();
+            $appointment = [
+                'id' => $appointmentObj->id,
+                'booking_reference' => $appointmentObj->booking_reference,
+                'user_id' => $appointmentObj->user_id,
+                'service' => $appointmentObj->service_id,
+                'service_id' => $appointmentObj->service_id,
+                'appointment_date' => $appointmentObj->appointment_date,
+                'appointment_time' => $appointmentObj->appointment_time,
+                'barber' => $appointmentObj->barber_id,
+                'barber_id' => $appointmentObj->barber_id,
+                'client_name' => $appointmentObj->client_name,
+                'client_email' => $appointmentObj->client_email,
+                'client_phone' => $appointmentObj->client_phone,
+                'notes' => $appointmentObj->notes,
+                'status' => $appointmentObj->status,
+                'created_at' => $appointmentObj->created_at
+            ];
         } else {
             setErrorToast("Failed to update appointment.");
         }
@@ -141,25 +160,11 @@ if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
     }
 }
 
-// Get services and barbers for dropdown menus (used in edit mode)
-if ($viewMode === 'edit') {
-    try {
-        $stmt = $db->query("SELECT DISTINCT name FROM services WHERE active = 1 ORDER BY name ASC");
-        $services = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        
-        $stmt = $db->query("SELECT id, name FROM barbers WHERE active = 1 ORDER BY name ASC");
-        $barbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $services = [];
-        $barbers = [];
-    }
-}
-
 // Pagination for list view
 if ($viewMode === 'list') {
     $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
     $perPage = 10;
-    
+
     // Get total count using model
     if (!empty($statusFilter)) {
         // This would need a new method in the model for filtered count
@@ -173,36 +178,33 @@ if ($viewMode === 'list') {
             $totalAppointments = 0;
         }
     } else {
-        $totalAppointments = $appointmentObj->count();
+        if (!isset($appointments) || !is_array($appointments)) {
+            $appointments = [];
+        }
+        $totalAppointments = count($appointments);
     }
-    
-    $totalPages = ceil($totalAppointments / $perPage);
-    
-    // Get appointments for current page
-    // This would need a custom method in the model to support filtering and pagination
-    // For now, we'll keep using the direct PDO approach
-    $offset = ($page - 1) * $perPage;
 
-    // Count total appointments with filter
+    $totalPages = ceil($totalAppointments / $perPage);
+
+    // Get appointments for current page
+    // FIX: Use correct user_id column in join (users.user_id)
+    $offset = ($page - 1) * $perPage;
     try {
         $query = "SELECT a.*, u.name as user_name FROM appointments a 
-                LEFT JOIN users u ON a.user_id = u.id";
+                LEFT JOIN users u ON a.user_id = u.user_id";
         if (!empty($statusFilter)) {
             $query .= " WHERE a.status = :status";
         }
         $query .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT :limit OFFSET :offset";
 
         $stmt = $db->prepare($query);
-        
-        // Bind parameters with their correct types
+
         if (!empty($statusFilter)) {
             $stmt->bindParam(':status', $statusFilter, PDO::PARAM_STR);
         }
-        
-        // IMPORTANT: Bind limit and offset with PDO::PARAM_INT
         $stmt->bindParam(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-        
+
         $stmt->execute();
         $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -223,44 +225,18 @@ if ($viewMode === 'list') {
         </div>
     </div>
     <div class="admin-card-body">
-        <?php if (isset($successMsg)): ?>
-            <div class="alert alert-success"><?php echo $successMsg; ?></div>
-        <?php endif; ?>
-        
-        <?php if (isset($errorMsg)): ?>
-            <div class="alert alert-danger"><?php echo $errorMsg; ?></div>
-        <?php endif; ?>
-        
         <form method="post" class="admin-form">
-            <input type="hidden" name="appointment_id" value="<?php echo $appointment['id']; ?>">
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="booking_reference">Booking Reference</label>
-                        <input type="text" id="booking_reference" class="form-control" value="<?php echo htmlspecialchars($appointment['booking_reference']); ?>" readonly>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select name="status" id="status" class="form-control status-select status-<?php echo $appointment['status']; ?>" required>
-                            <option value="pending" <?php echo $appointment['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                            <option value="confirmed" <?php echo $appointment['status'] === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
-                            <option value="completed" <?php echo $appointment['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
-                            <option value="cancelled" <?php echo $appointment['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
+            <input type="hidden" name="appointment_id" value="<?php echo htmlspecialchars($appointment['id']); ?>">
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label for="service">Service</label>
                         <select name="service" id="service" class="form-control" required>
                             <?php foreach ($services as $service): ?>
-                                <option value="<?php echo htmlspecialchars($service); ?>" <?php echo $appointment['service'] === $service ? 'selected' : ''; ?>><?php echo htmlspecialchars($service); ?></option>
+                                <option value="<?php echo htmlspecialchars($service['service_id']); ?>"
+                                    <?php echo ($appointment['service_id'] == $service['service_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($service['name']); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -271,13 +247,15 @@ if ($viewMode === 'list') {
                         <select name="barber" id="barber" class="form-control" required>
                             <option value="">Select a barber</option>
                             <?php foreach ($barbers as $barber): ?>
-                                <option value="<?php echo htmlspecialchars($barber['name']); ?>" <?php echo $appointment['barber'] === $barber['name'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($barber['name']); ?></option>
+                                <option value="<?php echo htmlspecialchars($barber['barber_id']); ?>"
+                                    <?php echo ($appointment['barber_id'] == $barber['barber_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($barber['name']); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
             </div>
-
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -292,10 +270,8 @@ if ($viewMode === 'list') {
                     </div>
                 </div>
             </div>
-
             <hr>
             <h3>Client Information</h3>
-
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -310,19 +286,27 @@ if ($viewMode === 'list') {
                     </div>
                 </div>
             </div>
-
             <div class="form-group">
                 <label for="client_phone">Client Phone</label>
                 <input type="text" name="client_phone" id="client_phone" class="form-control" value="<?php echo htmlspecialchars($appointment['client_phone']); ?>" required>
             </div>
-
             <div class="form-group">
                 <label for="notes">Notes</label>
                 <textarea name="notes" id="notes" class="form-control" rows="4"><?php echo htmlspecialchars($appointment['notes']); ?></textarea>
             </div>
-
             <div class="form-group">
-                <button type="submit" name="update_appointment" class="btn btn-primary"><i class="fas fa-save"></i> Update Appointment</button>
+                <label for="status">Status</label>
+                <select name="status" id="status" class="form-control status-select status-<?php echo htmlspecialchars($appointment['status']); ?>" required>
+                    <option value="pending" <?php echo $appointment['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                    <option value="confirmed" <?php echo $appointment['status'] === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                    <option value="completed" <?php echo $appointment['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
+                    <option value="cancelled" <?php echo $appointment['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                </select>
+            </div>
+            <div class="form-actions text-right">
+                <button type="submit" name="update_appointment" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Appointment
+                </button>
                 <a href="?page=appointments" class="btn btn-outline">Cancel</a>
             </div>
         </form>
@@ -404,65 +388,99 @@ if ($viewMode === 'list') {
                 </thead>
                 <tbody>
                     <?php if (count($appointments) > 0): ?>
+                        <?php
+                        // Build barber id=>name map
+                        $barberMap = [];
+                        try {
+                            $stmt = $db->query("SELECT barber_id, name FROM barbers");
+                            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $barber) {
+                                $barberMap[$barber['barber_id']] = $barber['name'];
+                            }
+                        } catch (Exception $e) {
+                            $barberMap = [];
+                        }
+                        // Build service id=>name map
+                        $serviceMap = [];
+                        try {
+                            $stmt = $db->query("SELECT service_id, name FROM services");
+                            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $service) {
+                                $serviceMap[$service['service_id']] = $service['name'];
+                            }
+                        } catch (Exception $e) {
+                            $serviceMap = [];
+                        }
+                        ?>
                         <?php foreach ($appointments as $appointment): ?>
                             <tr>
                                 <td>
-                                    <div class="booking-reference"><?php echo htmlspecialchars($appointment['booking_reference']); ?></div>
+                                    <div class="booking-reference"><?php echo htmlspecialchars($appointment['booking_reference'] ?? ''); ?></div>
                                 </td>
                                 <td>
                                     <div class="client-info">
-                                        <strong><?php echo htmlspecialchars($appointment['client_name']); ?></strong>
-                                        <span class="email"><?php echo htmlspecialchars($appointment['client_email']); ?></span>
+                                        <strong><?php echo htmlspecialchars($appointment['client_name'] ?? ''); ?></strong>
+                                        <span class="email"><?php echo htmlspecialchars($appointment['client_email'] ?? ''); ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="service-name"><?php echo htmlspecialchars($appointment['service']); ?></div>
+                                    <div class="service-name">
+                                        <?php
+                                        if (!empty($appointment['service_name'])) {
+                                            echo htmlspecialchars($appointment['service_name']);
+                                        } elseif (!empty($appointment['service'])) {
+                                            // If 'service' is numeric, try to map to name
+                                            if (is_numeric($appointment['service']) && isset($serviceMap[$appointment['service']])) {
+                                                echo htmlspecialchars($serviceMap[$appointment['service']]);
+                                            } else {
+                                                echo htmlspecialchars($appointment['service']);
+                                            }
+                                        } elseif (!empty($appointment['service_id']) && isset($serviceMap[$appointment['service_id']])) {
+                                            echo htmlspecialchars($serviceMap[$appointment['service_id']]);
+                                        } elseif (!empty($appointment['service_id'])) {
+                                            echo 'Service #' . htmlspecialchars($appointment['service_id']);
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="appointment-time">
-                                        <div class="date"><?php echo date('M d, Y', strtotime($appointment['appointment_date'])); ?></div>
-                                        <div class="time"><?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?></div>
+                                        <div class="date"><?php echo isset($appointment['appointment_date']) ? date('M d, Y', strtotime($appointment['appointment_date'])) : ''; ?></div>
+                                        <div class="time"><?php echo isset($appointment['appointment_time']) ? date('h:i A', strtotime($appointment['appointment_time'])) : ''; ?></div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="barber-name"><?php echo htmlspecialchars($appointment['barber']); ?></div>
+                                    <div class="barber-name">
+                                        <?php
+                                        if (!empty($appointment['barber_name'])) {
+                                            echo htmlspecialchars($appointment['barber_name']);
+                                        } elseif (!empty($appointment['barber'])) {
+                                            if (is_numeric($appointment['barber']) && isset($barberMap[$appointment['barber']])) {
+                                                echo htmlspecialchars($barberMap[$appointment['barber']]);
+                                            } else {
+                                                echo htmlspecialchars($appointment['barber']);
+                                            }
+                                        } elseif (!empty($appointment['barber_id']) && isset($barberMap[$appointment['barber_id']])) {
+                                            echo htmlspecialchars($barberMap[$appointment['barber_id']]);
+                                        } elseif (!empty($appointment['barber_id'])) {
+                                            echo 'Barber #' . htmlspecialchars($appointment['barber_id']);
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+                                    </div>
                                 </td>
                                 <td>
-                                    <form method="post" id="status-form-<?php echo $appointment['id']; ?>" class="status-form">
-                                        <input type="hidden" name="appointment_id" value="<?php echo $appointment['id']; ?>">
-                                        <div class="status-badge status-<?php echo $appointment['status']; ?>" 
-                                             onclick="toggleStatusDropdown(<?php echo $appointment['id']; ?>)">
-                                            <span class="status-text"><?php echo ucfirst($appointment['status']); ?></span>
-                                            <i class="fas fa-chevron-down"></i>
-                                        </div>
-                                        <div class="status-dropdown" id="status-dropdown-<?php echo $appointment['id']; ?>">
-                                            <div class="status-option status-pending <?php echo $appointment['status'] === 'pending' ? 'current' : ''; ?>" 
-                                                onclick="updateStatus(<?php echo $appointment['id']; ?>, 'pending')">
-                                                Pending
-                                            </div>
-                                            <div class="status-option status-confirmed <?php echo $appointment['status'] === 'confirmed' ? 'current' : ''; ?>" 
-                                                onclick="updateStatus(<?php echo $appointment['id']; ?>, 'confirmed')">
-                                                Confirmed
-                                            </div>
-                                            <div class="status-option status-completed <?php echo $appointment['status'] === 'completed' ? 'current' : ''; ?>" 
-                                                onclick="updateStatus(<?php echo $appointment['id']; ?>, 'completed')">
-                                                Completed
-                                            </div>
-                                            <div class="status-option status-cancelled <?php echo $appointment['status'] === 'cancelled' ? 'current' : ''; ?>" 
-                                                onclick="updateStatus(<?php echo $appointment['id']; ?>, 'cancelled')">
-                                                Cancelled
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="status" id="status-input-<?php echo $appointment['id']; ?>" value="<?php echo $appointment['status']; ?>">
-                                        <input type="hidden" name="update_status" value="1">
-                                    </form>
+                                    <span class="status-badge status-<?php echo htmlspecialchars($appointment['status'] ?? ''); ?>">
+                                        <?php echo ucfirst($appointment['status'] ?? ''); ?>
+                                    </span>
                                 </td>
                                 <td class="actions">
                                     <div class="action-buttons">
-                                        <a href="?page=appointments&edit=<?php echo $appointment['id']; ?>" class="btn btn-primary btn-sm">
+                                        <a href="?page=appointments&edit=<?php echo $appointment['id'] ?? $appointment['appointment_id']; ?>" class="btn btn-primary btn-sm">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="?page=appointments&delete=<?php echo $appointment['id']; ?>" class="btn btn-accent btn-sm delete-btn">
+                                        <a href="?page=appointments&delete=<?php echo $appointment['id'] ?? $appointment['appointment_id']; ?>" class="btn btn-accent btn-sm delete-btn">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
