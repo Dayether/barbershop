@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'database.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
@@ -7,50 +8,21 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-// Include database connection
-require_once 'includes/db_connection.php';
-
 $user_id = $_SESSION['user']['user_id'];
 $appointment_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $success = false;
 $error_message = '';
 
-// Verify that the appointment exists and belongs to this user
 if ($appointment_id > 0) {
-    $stmt = $conn->prepare("SELECT * FROM appointments WHERE appointment_id = ? AND user_id = ?");
-    $stmt->bind_param("ii", $appointment_id, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 1) {
-        $appointment = $result->fetch_assoc();
-        
-        // Check if the appointment can be cancelled (not in the past and not already cancelled)
-        $current_date = date('Y-m-d H:i:s');
-        $appointment_datetime = $appointment['appointment_date'] . ' ' . $appointment['appointment_time'];
-        
-        if ($appointment_datetime < $current_date) {
-            $error_message = "Cannot cancel past appointments.";
-        } elseif ($appointment['status'] === 'cancelled') {
-            $error_message = "This appointment is already cancelled.";
-        } elseif ($appointment['status'] === 'completed') {
-            $error_message = "Cannot cancel completed appointments.";
-        } else {
-            // Update appointment status to cancelled
-            $update = $conn->prepare("UPDATE appointments SET status = 'cancelled' WHERE appointment_id = ?");
-            $update->bind_param("i", $appointment_id);
-            
-            if ($update->execute()) {
-                $success = true;
-            } else {
-                $error_message = "Error cancelling appointment: " . $conn->error;
-            }
-            $update->close();
-        }
-    } else {
-        $error_message = "Invalid appointment or you don't have permission to cancel it.";
+    try {
+        $db = new Database();
+        $result = $db->cancelAppointment($appointment_id, $user_id);
+        $success = $result['success'];
+        $error_message = $result['error_message'];
+    } catch (Exception $e) {
+        $success = false;
+        $error_message = "Error cancelling appointment: " . $e->getMessage();
     }
-    $stmt->close();
 } else {
     $error_message = "Invalid appointment ID.";
 }
@@ -119,6 +91,34 @@ if ($appointment_id > 0) {
         </div>
     </section>
     
+    <section class="content-section">
+        <div class="container">
+            <div class="result-container">
+                <?php if ($success): ?>
+                    <div class="icon-container">
+                        <i class="fas fa-check-circle success-icon"></i>
+                    </div>
+                    <h2>Appointment Cancelled</h2>
+                    <p>Your appointment has been successfully cancelled.</p>
+                <?php else: ?>
+                    <div class="icon-container">
+                        <i class="fas fa-exclamation-triangle error-icon"></i>
+                    </div>
+                    <h2>Unable to Cancel Appointment</h2>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                <?php endif; ?>
+                
+                <div class="action-buttons">
+                    <a href="profile.php" class="btn btn-outline">Back to Profile</a>
+                    <a href="appointment.php" class="btn btn-primary">Book New Appointment</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <?php include 'includes/footer.php'; ?>
+</body>
+</html>
     <section class="content-section">
         <div class="container">
             <div class="result-container">

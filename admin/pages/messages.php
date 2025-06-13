@@ -1,42 +1,39 @@
 <?php
-// Include Message model
-require_once 'models/Message.php';
+require_once '../database.php';
 require_once 'includes/notifications.php';
 
-// Database connection
-$db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$db = new Database();
 
-// Instantiate Message object
-$messageObj = new Message($db);
-
-// Set default view mode to list
 $viewMode = 'list';
 $message = null;
+$errorMsg = '';
+$successMsg = '';
 
-// Check if view mode is requested
+// Update message status (mark as read/unread)
+if (isset($_POST['update_status'])) {
+    $id = (int)$_POST['message_id'];
+    $status = $_POST['status'];
+    $result = $db->updateMessageStatus($id, $status);
+    if ($result['success']) {
+        setSuccessToast("Message marked as " . $status);
+        // Redirect to the same view page to refresh status
+        header("Location: ?page=messages&view=" . $id);
+        exit();
+    } else {
+        setErrorToast($result['error_message'] ?? "Failed to update message status.");
+    }
+}
+
+// Mark as read if viewing a new message
 if (isset($_GET['view'])) {
     $viewMode = 'view';
-    $id = $_GET['view'];
-    
-    // Get message details using the model
-    $messageObj->id = $id;
-    if ($messageObj->readSingle()) {
-        $message = [
-            'id' => $messageObj->id,
-            'name' => $messageObj->name,
-            'email' => $messageObj->email,
-            'phone' => $messageObj->phone,
-            'subject' => $messageObj->subject,
-            'message' => $messageObj->message,
-            'status' => $messageObj->status,
-            'created_at' => $messageObj->created_at
-        ];
-        
-        // Mark as read if it's new
-        if ($message['status'] == 'new') {
-            $messageObj->status = 'read';
-            $messageObj->updateStatus();
+    $id = (int)$_GET['view'];
+    $message = $db->getMessageById($id);
+    if ($message) {
+        if ($message['status'] === 'new') {
+            $db->updateMessageStatus($id, 'read');
+            // Re-fetch to get updated status
+            $message = $db->getMessageById($id);
         }
     } else {
         setErrorToast("Message not found.");
@@ -44,49 +41,18 @@ if (isset($_GET['view'])) {
     }
 }
 
-// Delete message - Remove the inline JavaScript approach
-if (isset($_GET['delete']) && !isset($_GET['confirm_delete'])) {
-    // Don't output anything here - we'll handle this with client-side JavaScript
-}
-
-// Process confirmed deletion
+// Delete message
 if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
     $id = (int)$_GET['delete'];
-    
-    try {
-        // Get message details first
-        $messageObj->id = $id;
-        if (!$messageObj->readSingle()) {
-            throw new Exception("Message not found.");
-        }
-        
-        // Delete the message
-        if ($messageObj->delete()) {
-            setSuccessToast("Message deleted successfully!");
-        } else {
-            setErrorToast("Failed to delete message.");
-        }
-    } catch (PDOException $e) {
-        error_log("Error deleting message: " . $e->getMessage());
-        setErrorToast("Database error: " . $e->getMessage());
-    } catch (Exception $e) {
-        setErrorToast($e->getMessage());
-    }
-}
-
-// Update message status (mark as read/unread)
-if (isset($_POST['update_status'])) {
-    try {
-        $messageObj->id = $_POST['message_id'];
-        $messageObj->status = $_POST['status'];
-        
-        if ($messageObj->updateStatus()) {
-            setSuccessToast("Message marked as " . $messageObj->status);
-        } else {
-            setErrorToast("Failed to update message status.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $result = $db->deleteMessage($id);
+    if ($result['success']) {
+        setSuccessToast("Message deleted successfully!");
+        header("Location: ?page=messages");
+        exit();
+    } else {
+        setErrorToast($result['error_message'] ?? "Failed to delete message.");
+        header("Location: ?page=messages");
+        exit();
     }
 }
 
@@ -97,18 +63,10 @@ $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 if ($viewMode === 'list') {
     $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
     $perPage = 10;
-    
-    // Get total count
-    if(!empty($statusFilter)) {
-        $totalMessages = $messageObj->count($statusFilter);
-    } else {
-        $totalMessages = $messageObj->count();
-    }
+    $totalMessages = $db->countMessages($statusFilter);
     $totalPages = ceil($totalMessages / $perPage);
-    
-    // Get messages for current page
-    $stmt = $messageObj->read($page, $perPage, $statusFilter);
-    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $messages = $db->getMessages($page, $perPage, $statusFilter);
+    $unreadCount = $db->countMessages('new');
 }
 ?>
 
@@ -217,7 +175,7 @@ if ($viewMode === 'list') {
                 New 
                 <?php 
                 // Count unread messages
-                $unreadCount = $messageObj->count('new');
+                $unreadCount = $db->countMessages('new');
                 if ($unreadCount > 0) {
                     echo '<span class="badge">' . $unreadCount . '</span>';
                 }
@@ -527,73 +485,7 @@ if ($viewMode === 'list') {
         align-items: flex-start;
         gap: 20px;
     }
-}.message-meta 
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click handler for unread message rows to view message
-    const messageRows = document.querySelectorAll('tr[class*="unread-row"]');
-    messageRows.forEach(row => {
-        row.addEventListener('click', function(e) {
-            // Don't trigger when clicking buttons, links, or forms
-            if (
-                e.target.tagName !== 'BUTTON' &&
-                e.target.tagName !== 'A' &&
-                !e.target.closest('button') &&
-                !e.target.closest('a') &&
-                !e.target.closest('form')
-            ) {
-                const viewLink = row.querySelector('a[href*="view="]');
-                if (viewLink) {
-                    window.location = viewLink.href;
-                }
-            }
-        });
-    });
-
-    // Add custom delete handler for message delete buttons
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const deleteUrl = this.getAttribute('href');
-            const confirmMessage = this.getAttribute('data-confirm') || 'Are you sure you want to delete this message? This action cannot be undone.';
-            const confirmTitle = this.getAttribute('data-confirm-title') || 'Delete Message';
-
-            iziToast.question({
-                timeout: false,
-                close: false,
-                overlay: true,
-                displayMode: 'once',
-                id: 'question',
-                zindex: 999,
-                title: confirmTitle,
-                message: confirmMessage,
-                position: 'center',
-                buttons: [
-                    ['<button><b>Yes, Delete</b></button>', function (instance, toast) {
-                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                        iziToast.info({
-                            message: 'Deleting message...',
-                            timeout: 1000,
-                            position: 'center'
-                        });
-                        setTimeout(function() {
-                            window.location.href = deleteUrl + '&confirm_delete=1';
-                        }, 1000);
-                    }, true],
-                    ['<button>Cancel</button>', function (instance, toast) {
-                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                    }]
-                ]
-            });
-        });
-    });
-});
-</script>
-
-
+}
 
 
 

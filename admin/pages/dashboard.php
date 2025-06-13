@@ -14,7 +14,31 @@ $appointmentStats = $dashboard->getAppointmentStats();
 $cashFlowData = $dashboard->getCashFlowData();
 $profitLossData = $dashboard->getProfitLossData();
 $completionRate = $dashboard->getCompletionRate();
-$latestAppointments = $dashboard->getLatestAppointments();
+
+// Replace this line:
+// $latestAppointments = $dashboard->getLatestAppointments();
+
+// With this direct query:
+$latestAppointments = [];
+$stmt = $db->prepare("
+    SELECT 
+        a.appointment_id,
+        a.booking_reference,
+        a.client_name,
+        a.client_email,
+        a.appointment_date,
+        a.appointment_time,
+        a.status,
+        s.name AS service_name,
+        a.service_id
+    FROM appointments a
+    LEFT JOIN services s ON a.service_id = s.service_id
+    ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    LIMIT 5
+");
+$stmt->execute();
+$latestAppointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 $volumeStats = $dashboard->getMonthlyVolume();
 $monthlyRevenue = $dashboard->getMonthlyRevenue();
 
@@ -148,8 +172,14 @@ $profitLossRevenues = json_encode($profitLossData['revenues']);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($latestAppointments)): ?>
-                        <?php foreach ($latestAppointments as $appointment): ?>
+                    <?php
+                    // Only show "No recent appointments found" if the array is empty or contains only empty/invalid rows
+                    $hasAppointments = false;
+                    if (!empty($latestAppointments) && is_array($latestAppointments)) {
+                        foreach ($latestAppointments as $appointment) {
+                            if (!empty($appointment['appointment_id'])) {
+                                $hasAppointments = true;
+                    ?>
                             <tr>
                                 <td>
                                     <div class="booking-reference"><?php echo htmlspecialchars($appointment['booking_reference']); ?></div>
@@ -192,8 +222,11 @@ $profitLossRevenues = json_encode($profitLossData['revenues']);
                                     </span>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+                    <?php
+                            }
+                        }
+                    }
+                    if (!$hasAppointments): ?>
                         <tr>
                             <td colspan="5" class="text-center">No recent appointments found</td>
                         </tr>

@@ -332,7 +332,8 @@ INSERT INTO `services` (`service_id`, `name`, `description`, `duration`, `price`
 
 CREATE TABLE `users` (
   `user_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `profile_pic` varchar(255) DEFAULT 'uploads/default-profile.jpg',
@@ -347,14 +348,14 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `name`, `email`, `password`, `profile_pic`, `phone`, `created_at`, `account_type`) VALUES
-(1, 'ivan loop', 'alcantaraivan2003@gmail.com', '$2y$10$xFcFIMG1ltsnjihYwCuc8ODMh2HReoApYqWS9j3nKh5F7O2zAiFai', 'uploads/profiles/profile_1_1747121145.jpg', '', '2025-05-11 12:28:25', '1'),
-(2, 'Cath Agno', 'cjhoyagno941@gmail.com', '$2y$10$DlLggsLsVVIbiqj2HL9zLOFdIomET2bR8R/XoPyvZYQokzRqIuRKi', 'uploads/profiles/profile_2_1746966826.jpg', NULL, '2025-05-11 12:31:54', '0'),
-(3, 'testvan', 'alcantarafinals@gmail.com', '$2y$10$5wFo0bPl7Y0dJEoXRgmf4uuEz0h5Pf7ohehZIvYLPbdrMMrS2Rnzi', 'images/default-profile.png', NULL, '2025-05-11 14:49:17', NULL),
-(4, 'alea', 'aleash@gmail.com', '$2y$10$DsMYUWFowBnvO.7FR6R/I.8bekPQJZOaZou9.OBvfwMdoLz84en1m', 'uploads/profiles/profile_4_1746978623.jpg', '', '2025-05-11 14:52:02', NULL),
-(5, 'ranuel viray', 'superviray@gmail.com', '$2y$10$BFyIitZAUwqW4xEBwt33dO9NBtWrgfx0qtzXB0yzlr0ebeBjtft5y', 'images/default-profile.png', NULL, '2025-05-13 07:43:43', NULL),
-(6, 'Admin User', 'admin@tipunobarbershop.com', 'password', 'uploads/default-profile.jpg', NULL, '2025-05-13 17:11:37', '1'),
-(7, 'abcde agno', 'abcde@gmail.com', '$2y$10$t1.cUxIZazzwzzdET0pmvOf3cT1OtY//e9b5y9MbpMVE3/ADOQJk2', 'uploads/profiles/profile_7_1748433283.jpg', '', '2025-05-28 11:53:43', NULL);
+INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `email`, `password`, `profile_pic`, `phone`, `created_at`, `account_type`) VALUES
+(1, 'ivan', 'loop', 'alcantaraivan2003@gmail.com', '$2y$10$xFcFIMG1ltsnjihYwCuc8ODMh2HReoApYqWS9j3nKh5F7O2zAiFai', 'uploads/profiles/profile_1_1747121145.jpg', '', '2025-05-11 12:28:25', '1'),
+(2, 'Cath', 'Agno', 'cjhoyagno941@gmail.com', '$2y$10$DlLggsLsVVIbiqj2HL9zLOFdIomET2bR8R/XoPyvZYQokzRqIuRKi', 'uploads/profiles/profile_2_1746966826.jpg', NULL, '2025-05-11 12:31:54', '0'),
+(3, 'test', 'van', 'alcantarafinals@gmail.com', '$2y$10$5wFo0bPl7Y0dJEoXRgmf4uuEz0h5Pf7ohehZIvYLPbdrMMrS2Rnzi', 'images/default-profile.png', NULL, '2025-05-11 14:49:17', NULL),
+(4, 'alea', 'ALCANTARA', 'aleash@gmail.com', '$2y$10$DsMYUWFowBnvO.7FR6R/I.8bekPQJZOaZou9.OBvfwMdoLz84en1m', 'uploads/profiles/profile_4_1746978623.jpg', '', '2025-05-11 14:52:02', NULL),
+(5, 'ranuel', 'viray', 'superviray@gmail.com', '$2y$10$BFyIitZAUwqW4xEBwt33dO9NBtWrgfx0qtzXB0yzlr0ebeBjtft5y', 'images/default-profile.png', NULL, '2025-05-13 07:43:43', NULL),
+(6, 'Admin', 'User', 'admin@tipunobarbershop.com', 'password', 'uploads/default-profile.jpg', NULL, '2025-05-13 17:11:37', '1'),
+(7, 'abcde', 'agno', 'abcde@gmail.com', '$2y$10$t1.cUxIZazzwzzdET0pmvOf3cT1OtY//e9b5y9MbpMVE3/ADOQJk2', 'uploads/profiles/profile_7_1748433283.jpg', '', '2025-05-28 11:53:43', NULL);
 
 --
 -- Indexes for dumped tables
@@ -655,4 +656,5 @@ BEGIN
         WHERE product_id = NEW.product_id;
     END IF;
 END$$
+DELIMITER ;
 DELIMITER ;

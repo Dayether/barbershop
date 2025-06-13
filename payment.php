@@ -1,153 +1,44 @@
 <?php
 session_start();
 
-// Check if user is logged in
-if (!isset($_SESSION['user'])) {
-    // Store the current page as the redirect destination after login
-    $_SESSION['redirect_after_login'] = 'payment.php';
-    
-    // Redirect to login page
-    header('Location: login.php');
-    exit;
-}
-
-// Database connection
-try {
-    $db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
-}
-
-// Initialize cart if not exists
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-
-// Handle add product to order
-if (isset($_POST['add_product'])) {
-    $product_id = $_POST['product_id'];
-    $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
-    
-    // Fetch product details
-    try {
-        $stmt = $db->prepare("SELECT product_id, name, price, image FROM products WHERE product_id = ? AND active = 1");
-        $stmt->execute([$product_id]);
-        $product = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($product) {
-            // If product exists in cart, update quantity
-            if (isset($_SESSION['cart'][$product_id])) {
-                $_SESSION['cart'][$product_id]['quantity'] += $quantity;
-            } else {
-                // Add new product to cart
-                $_SESSION['cart'][$product_id] = [
-                    'id' => $product['product_id'],
-                    'name' => $product['name'],
-                    'price' => $product['price'],
-                    'image' => $product['image'],
-                    'quantity' => $quantity
-                ];
-            }
-            
-            // Show success message (optional)
-            $success_message = "Product added to your order!";
-        }
-    } catch (PDOException $e) {
-        $error_message = "Error: " . $e->getMessage();
-    }
-}
-
-// Handle remove product from order
-if (isset($_POST['remove_product'])) {
-    $product_id = $_POST['product_id'];
-    
-    if (isset($_SESSION['cart'][$product_id])) {
-        unset($_SESSION['cart'][$product_id]);
-        // Show success message
-        $success_message = "Product removed from your order!";
-    }
-}
-
-// Update product quantity
-if (isset($_POST['update_quantity'])) {
-    $product_id = $_POST['product_id'];
-    $quantity = (int)$_POST['quantity'];
-    
-    if ($quantity > 0 && isset($_SESSION['cart'][$product_id])) {
-        $_SESSION['cart'][$product_id]['quantity'] = $quantity;
-        $success_message = "Quantity updated!";
-    } elseif ($quantity <= 0 && isset($_SESSION['cart'][$product_id])) {
-        unset($_SESSION['cart'][$product_id]);
-        $success_message = "Product removed from your order!";
-    }
-}
-
-// Get any payment errors
+// Load payment errors from session if any
 $payment_errors = [];
 if (isset($_SESSION['payment_errors'])) {
     $payment_errors = $_SESSION['payment_errors'];
     unset($_SESSION['payment_errors']);
 }
 
-// Calculate order total and items count
+// Initialize cart from session
+$cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+
+// Only redirect if cart is truly empty
+if (empty($cart)) {
+    header('Location: shop.php');
+    exit;
+}
+
+// Calculate totals for summary
 $total = 0;
 $items_count = 0;
-foreach ($_SESSION['cart'] as $item) {
+foreach ($cart as $item) {
     $total += $item['price'] * $item['quantity'];
     $items_count += $item['quantity'];
 }
-
-// Shipping cost
 $shipping_cost = 5.00;
-// Tax rate (e.g., 8%)
-$tax_rate = 0.08;
-$tax_amount = $total * $tax_rate;
-// Final total with shipping and tax
+$tax_amount = $total * 0.08;
 $final_total = $total + $shipping_cost + $tax_amount;
 
-// Server-side expiry date and credit card validation (accept only MM/YY)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && $_POST['payment_method'] === 'credit_card') {
-    $expiry_date = $_POST['expiry_date'] ?? '';
-    $card_number = $_POST['card_number'] ?? '';
-    $card_name = $_POST['card_name'] ?? '';
-    $cvv = $_POST['cvv'] ?? '';
-
-    // Remove spaces from card number for validation
-    $card_number_clean = preg_replace('/\s+/', '', $card_number);
-
-    // Validate all credit card fields
-    if (!$card_number_clean || !preg_match('/^\d{13,19}$/', $card_number_clean)) {
-        $payment_errors[] = "Please enter a valid card number.";
-    }
-    if (!$card_name) {
-        $payment_errors[] = "Please enter the name on your card.";
-    }
-    if (!$expiry_date || !preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $expiry_date)) {
-        $payment_errors[] = "Please enter a valid expiry date in MM/YY format (e.g. 05/27).";
-    } else {
-        list($exp_month, $exp_year) = explode('/', $expiry_date);
-        $exp_month = intval($exp_month);
-        $exp_year = intval($exp_year) + 2000;
-        $now = new DateTime();
-        $current_year = intval($now->format('Y'));
-        $current_month = intval($now->format('m'));
-        if ($exp_year < $current_year || ($exp_year == $current_year && $exp_month < $current_month)) {
-            $payment_errors[] = "Your card is expired. Please use a valid card.";
-        }
-    }
-    if (!$cvv || !preg_match('/^\d{3,4}$/', $cvv)) {
-        $payment_errors[] = "Please enter a valid CVV (3 or 4 digits).";
-    }
+// For repopulating form fields after error
+function old($key, $default = '') {
+    if (isset($_POST[$key])) return htmlspecialchars($_POST[$key]);
+    return $default;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - Tipuno Barbershop</title>
+    <title>Payment - Tipuno Barbershop</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/payment.css">  
@@ -158,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <!-- Add SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -209,39 +102,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                             <div class="form-group">
                                 <label for="first_name">First Name <span class="required">*</span></label>
                                 <input type="text" id="first_name" name="first_name" required 
-                                    value="<?php echo isset($_SESSION['user']) ? explode(' ', $_SESSION['user']['name'])[0] : ''; ?>">
+                                    value="<?php
+                                        if (isset($_SESSION['user'])) {
+                                            $user = $_SESSION['user'];
+                                            if (!empty($user['first_name'])) {
+                                                echo htmlspecialchars($user['first_name']);
+                                            } elseif (!empty($user['name'])) {
+                                                echo htmlspecialchars(explode(' ', $user['name'])[0]);
+                                            } else {
+                                                echo '';
+                                            }
+                                        }
+                                        // Repopulate after error
+                                        echo old('first_name');
+                                    ?>">
                             </div>
                             <div class="form-group">
                                 <label for="last_name">Last Name <span class="required">*</span></label>
                                 <input type="text" id="last_name" name="last_name" required
-                                    value="<?php echo isset($_SESSION['user']) ? (strpos($_SESSION['user']['name'], ' ') !== false ? substr($_SESSION['user']['name'], strpos($_SESSION['user']['name'], ' ') + 1) : '') : ''; ?>">
+                                    value="<?php
+                                        if (isset($_SESSION['user'])) {
+                                            $user = $_SESSION['user'];
+                                            if (!empty($user['last_name'])) {
+                                                echo htmlspecialchars($user['last_name']);
+                                            } elseif (!empty($user['name']) && strpos($user['name'], ' ') !== false) {
+                                                echo htmlspecialchars(substr($user['name'], strpos($user['name'], ' ') + 1));
+                                            } else {
+                                                echo '';
+                                            }
+                                        }
+                                        // Repopulate after error
+                                        echo old('last_name');
+                                    ?>">
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label for="email">Email Address <span class="required">*</span></label>
                             <input type="email" id="email" name="email" required
-                                value="<?php echo isset($_SESSION['user']) ? $_SESSION['user']['email'] : ''; ?>">
+                                value="<?php echo old('email', isset($_SESSION['user']) ? $_SESSION['user']['email'] : ''); ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="phone">Phone <span class="required">*</span></label>
-                            <input type="tel" id="phone" name="phone" required>
+                            <input type="tel" id="phone" name="phone" required value="<?php echo old('phone'); ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="address">Street Address <span class="required">*</span></label>
-                            <input type="text" id="address" name="address" placeholder="House number and street name" required>
+                            <input type="text" id="address" name="address" placeholder="House number and street name" required value="<?php echo old('address'); ?>">
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="city">Town / City <span class="required">*</span></label>
-                                <input type="text" id="city" name="city" required>
+                                <input type="text" id="city" name="city" required value="<?php echo old('city'); ?>">
                             </div>
                             <div class="form-group">
                                 <label for="zip">ZIP Code <span class="required">*</span></label>
-                                <input type="text" id="zip" name="zip" required>
+                                <input type="text" id="zip" name="zip" required value="<?php echo old('zip'); ?>">
                             </div>
                         </div>
                         
@@ -249,20 +168,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                             <label for="country">Country <span class="required">*</span></label>
                             <select id="country" name="country" required>
                                 <option value="">Select a country</option>
-                                <option value="USA">United States</option>
-                                <option value="CA">Canada</option>
-                               <option value="PH">Philippines</option>
-                                <option value="DE">Germany</option>
-
-                                <option value="UK">United Kingdom</option>
-                                <option value="AU">Australia</option>
-                                <option value="IN">India</option>
+                                <option value="USA" <?php echo old('country')=='USA'?'selected':''; ?>>United States</option>
+                                <option value="CA" <?php echo old('country')=='CA'?'selected':''; ?>>Canada</option>
+                                <option value="PH" <?php echo old('country')=='PH'?'selected':''; ?>>Philippines</option>
+                                <option value="DE" <?php echo old('country')=='DE'?'selected':''; ?>>Germany</option>
+                                <option value="UK" <?php echo old('country')=='UK'?'selected':''; ?>>United Kingdom</option>
+                                <option value="AU" <?php echo old('country')=='AU'?'selected':''; ?>>Australia</option>
+                                <option value="IN" <?php echo old('country')=='IN'?'selected':''; ?>>India</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
                             <label for="notes">Order Notes (Optional)</label>
-                            <textarea id="notes" name="notes" placeholder="Notes about your order, e.g. special delivery instructions"></textarea>
+                            <textarea id="notes" name="notes" placeholder="Notes about your order, e.g. special delivery instructions"><?php echo old('notes'); ?></textarea>
                         </div>
                     
                         <h2 class="mt-40">Payment Method</h2>
@@ -329,18 +247,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                     <h2>Order Summary</h2>
                     
                     <div class="summary-item">
-                        <span>Items (<?php echo $items_count; ?>)</span>
-                        <span>$<?php echo number_format($total, 2); ?></span>
+                        <span id="items-count">Items (<?php echo $items_count; ?>)</span>
+                        <span id="items-subtotal">$<?php echo number_format($total, 2); ?></span>
                     </div>
                     
                     <div class="summary-item">
                         <span>Shipping</span>
-                        <span>$<?php echo number_format($shipping_cost, 2); ?></span>
+                        <span id="shipping-fee">$<?php echo number_format($shipping_cost, 2); ?></span>
                     </div>
                     
                     <div class="summary-item">
                         <span>Tax</span>
-                        <span>$<?php echo number_format($tax_amount, 2); ?></span>
+                        <span id="tax-fee">$<?php echo number_format($tax_amount, 2); ?></span>
                     </div>
                     
                     <div class="summary-divider"></div>
@@ -540,10 +458,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                 // Check if cart is empty
                 if (<?php echo count($_SESSION['cart']) === 0 ? 'true' : 'false'; ?>) {
                     e.preventDefault();
-                    iziToast.warning({
-                        title: 'Empty Cart',
-                        message: 'Your cart is empty. Please add products before checkout.',
-                        icon: 'fas fa-shopping-cart'
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No products ordered',
+                        text: 'Please proceed to shop first.',
+                        confirmButtonText: 'Go to Shop',
+                        allowOutsideClick: false
+                    }).then(function() {
+                        window.location.href = 'shop.php';
                     });
                     return false;
                 }
@@ -640,15 +562,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                                             item.remove();
                                             
                                             // Update cart totals
-                                            const itemsCountElem = document.querySelector('.summary-item:first-child span:first-child');
-                                            const subtotalElem = document.querySelector('.summary-item:first-child span:last-child');
+                                            const itemsCountElem = document.getElementById('items-count');
+                                            const subtotalElem = document.getElementById('items-subtotal');
                                             const taxElem = document.querySelector('.summary-item:nth-child(3) span:last-child');
                                             const totalElem = document.getElementById('cart-total');
                                             const cartDataElem = document.getElementById('cart-data');
                                             
+                                            // Update items count
                                             if (itemsCountElem) itemsCountElem.textContent = 'Items (' + data.itemsCount + ')';
+                                            // Update subtotal
                                             if (subtotalElem) subtotalElem.textContent = '$' + data.subtotal.toFixed(2);
+                                            // Update tax
                                             if (taxElem) taxElem.textContent = '$' + data.tax.toFixed(2);
+                                            // Update total
                                             if (totalElem) totalElem.textContent = '$' + data.total.toFixed(2);
                                             if (cartDataElem) cartDataElem.value = JSON.stringify(data.cart);
                                             
@@ -785,42 +711,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                 // Show loading indicator on the quantity element
                 const item = document.getElementById('item-' + productId);
                 if (!item) return;
-                
-                // Add loading state visual indicator
                 item.classList.add('updating');
-                
-                // AJAX request to update quantity
                 fetch('update_cart.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
+                    credentials: 'same-origin',
                     body: 'action=update&product_id=' + productId + '&quantity=' + quantity
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // Remove loading state
                     item.classList.remove('updating');
-                    
+                    console.log('AJAX update_cart.php response:', data); // Debug log
                     if (data.success) {
-                        // Update item subtotal with animation
-                        const subtotalElem = item.querySelector('.item-subtotal');
-                        if (subtotalElem) {
-                            this.animateValueChange(subtotalElem, data.itemSubtotal);
-                        }
-                        
-                        // Update cart totals
                         this.updateCartSummary(data);
-                        
-                        // Show success message
                         iziToast.success({
                             title: 'Updated',
                             message: 'Cart has been updated',
                             icon: 'fas fa-check-circle',
-                            position: 'bottomRight' // Move to bottom right to be less intrusive
+                            position: 'bottomRight'
                         });
                     } else {
-                        // Show error message
                         iziToast.error({
                             title: 'Error',
                             message: data.message || 'Failed to update quantity',
@@ -831,73 +743,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
                 .catch(error => {
                     console.error('Error:', error);
                     item.classList.remove('updating');
-                    
                     iziToast.error({
                         title: 'Error',
-                        message: 'Something went wrong. Please try again.',
+                        message: 'Something went wrong. Please try again. (AJAX parse error)',
                         icon: 'fas fa-exclamation-circle'
                     });
                 });
             }
             
-            animateValueChange(element, newValue) {
-                const currentText = element.textContent;
-                const currentValue = parseFloat(currentText.replace(/[^0-9.-]+/g, ''));
-                
-                // Highlight the change
-                element.style.transition = 'background-color 0.5s';
-                element.style.backgroundColor = newValue > currentValue ? 
-                    'rgba(var(--primary-color-rgb), 0.2)' : 
-                    'rgba(var(--accent-color-secondary-rgb), 0.1)';
-                
-                // Update the value
-                element.textContent = '$' + newValue.toFixed(2);
-                
-                // Reset the highlight after animation
-                setTimeout(() => {
-                    element.style.backgroundColor = '';
-                }, 500);
-            }
-            
             updateCartSummary(data) {
-                const itemsCountElem = document.querySelector('.summary-item:first-child span:first-child');
-                const subtotalElem = document.querySelector('.summary-item:first-child span:last-child');
-                const taxElem = document.querySelector('.summary-item:nth-child(3) span:last-child');
+                const itemsCountElem = document.getElementById('items-count');
+                const subtotalElem = document.getElementById('items-subtotal');
+                const shippingElem = document.getElementById('shipping-fee');
+                const taxElem = document.getElementById('tax-fee');
                 const totalElem = document.getElementById('cart-total');
                 const cartDataElem = document.getElementById('cart-data');
-                
+
+                // Update items count
                 if (itemsCountElem) itemsCountElem.textContent = 'Items (' + data.itemsCount + ')';
-                if (subtotalElem) this.animateValueChange(subtotalElem, data.subtotal);
-                if (taxElem) this.animateValueChange(taxElem, data.tax);
-                if (totalElem) this.animateValueChange(totalElem, data.total);
+                // Update subtotal (price beside items count)
+                if (subtotalElem) subtotalElem.textContent = '$' + data.subtotal.toFixed(2);
+                // Update shipping
+                if (shippingElem && data.shipping !== undefined) shippingElem.textContent = '$' + data.shipping.toFixed(2);
+                // Update tax
+                if (taxElem && data.tax !== undefined) taxElem.textContent = '$' + data.tax.toFixed(2);
+                // Update total
+                if (totalElem) totalElem.textContent = '$' + data.total.toFixed(2);
+                // Update hidden cart data
                 if (cartDataElem) cartDataElem.value = JSON.stringify(data.cart);
-                
-                // If a discount is applied, we need to update it
+
+                // Update item subtotal for the changed item
+                if (data.product_id !== undefined) {
+                    const item = document.getElementById('item-' + data.product_id);
+                    if (item) {
+                        const subtotalElem = item.querySelector('.item-subtotal');
+                        if (subtotalElem) {
+                            subtotalElem.textContent = '$' + (data.itemSubtotal ? data.itemSubtotal.toFixed(2) : '0.00');
+                        }
+                    }
+                }
+
+                // If cart is empty, show empty message
+                const itemsContainer = document.getElementById('items-container');
+                if (data.cart && data.cart.length === 0 && itemsContainer) {
+                    itemsContainer.innerHTML = `
+                        <div class="empty-cart-message">
+                            <i class="fas fa-shopping-bag"></i>
+                            <p>Your cart is empty</p>
+                            <a href="shop.php" class="btn btn-outline">Shop Now</a>
+                        </div>
+                    `;
+                }
+
+                // If a discount is applied, update it
                 if (document.querySelector('.summary-discount')) {
-                    this.recalculateDiscount();
+                    this.recalculateDiscount && this.recalculateDiscount();
                 }
             }
-            
-            recalculateDiscount() {
-                const subtotal = parseFloat(document.querySelector('.summary-item:first-child span:last-child').textContent.replace('$', ''));
-                const discountElem = document.querySelector('.summary-discount span:last-child');
-                if (discountElem) {
-                    const discount = subtotal * 0.1; // Assuming 10% discount
-                    discountElem.textContent = `-$${discount.toFixed(2)}`;
-                    
-                    // Recalculate total
-                    const shipping = parseFloat(document.querySelector('.summary-item:nth-child(2) span:last-child').textContent.replace('$', ''));
-                    const tax = parseFloat(document.querySelector('.summary-item:nth-child(3) span:last-child').textContent.replace('$', ''));
-                    const newTotal = subtotal - discount + shipping + tax;
-                    
-                    // Update displayed total
-                    const totalElem = document.getElementById('cart-total');
-                    if (totalElem) this.animateValueChange(totalElem, newTotal);
-                    
-                    // Update hidden input for total
-                    const totalAmountInput = document.querySelector('input[name="total_amount"]');
-                    if (totalAmountInput) totalAmountInput.value = newTotal.toFixed(2);
-                }
+
+            // Helper to escape HTML for item names
+            escapeHtml(text) {
+                const map = {
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
             }
         }
         
@@ -994,79 +903,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method']) && 
 
     <!-- Credit card formatting script -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Toggle payment methods
-            const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
-            paymentMethods.forEach(method => {
-                method.addEventListener('change', function() {
-                    document.querySelectorAll('.payment-box').forEach(box => {
-                        box.style.display = 'none';
-                    });
-                    
-                    if (this.checked) {
-                        const paymentBox = this.nextElementSibling.nextElementSibling;
-                        paymentBox.style.display = 'block';
-                    }
-                });
+       document.addEventListener('DOMContentLoaded', function() {
+    // Toggle payment methods
+    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', function() {
+            document.querySelectorAll('.payment-box').forEach(box => {
+                box.style.display = 'none';
             });
-            
-            // Initialize the correct payment box
-            document.querySelectorAll('input[name="payment_method"]:checked').forEach(method => {
-                const event = new Event('change');
-                method.dispatchEvent(event);
-            });
-            
-            // Credit card input formatting
-            const cardNumber = document.getElementById('card_number');
-            if (cardNumber) {
-                cardNumber.addEventListener('input', function (e) {
-                    let value = e.target.value.replace(/\D/g, '');
-                    let formattedValue = '';
-                    
-                    for (let i = 0; i < value.length; i++) {
-                        if (i > 0 && i % 4 === 0) {
-                            formattedValue += ' ';
-                        }
-                        formattedValue += value[i];
-                    }
-                    
-                    e.target.value = formattedValue;
-                });
-            }
-            
-            // Expiry date validation (MM/YY only, no forced formatting)
-            const expiryDate = document.getElementById('expiry_date');
-            if (expiryDate) {
-                expiryDate.addEventListener('blur', function (e) {
-                    const val = e.target.value.trim();
-                    const errorMsg = e.target.nextElementSibling;
-                    let valid = true;
-                    let msg = '';
-                    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(val)) {
-                        valid = false;
-                        msg = 'Format must be MM/YY (e.g. 05/27)';
-                    } else {
-                        const [mm, yy] = val.split('/');
-                        let expMonth = parseInt(mm, 10);
-                        let expYear = parseInt(yy, 10) + 2000;
-                        const now = new Date();
-                        const expDate = new Date(expYear, expMonth - 1, 1);
-                        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                        if (expDate < thisMonth) {
-                            valid = false;
-                            msg = 'Card is expired';
-                        }
-                    }
-                    if (!valid) {
-                        e.target.classList.add('error');
-                        if (errorMsg) errorMsg.textContent = msg;
-                    } else {
-                        e.target.classList.remove('error');
-                        if (errorMsg) errorMsg.textContent = '';
-                    }
-                });
+
+            if (this.checked) {
+                const paymentBox = this.nextElementSibling.nextElementSibling;
+                paymentBox.style.display = 'block';
             }
         });
-    </script>
-</body>
-</html>
+    });
+
+    // Initialize the correct payment box
+    document.querySelectorAll('input[name="payment_method"]:checked').forEach(method => {
+        const event = new Event('change');
+        method.dispatchEvent(event);
+    });
+
+    // Credit card input formatting
+    const cardNumber = document.getElementById('card_number');
+    if (cardNumber) {
+        cardNumber.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+
+            e.target.value = formattedValue;
+        });
+    }
+});
+            
+            // Expiry date validation (MM/YY only, no forced formatting)
+           const expiryDate = document.getElementById('expiry_date');
+if (expiryDate) {
+    expiryDate.addEventListener('blur', function (e) {
+        const val = e.target.value.trim();
+        const errorMsg = e.target.nextElementSibling;
+        let valid = true;
+        let msg = '';
+
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(val)) {
+            valid = false;
+            msg = 'Format must be MM/YY (e.g. 05/27)';
+        } else {
+            const [mm, yy] = val.split('/');
+            let expMonth = parseInt(mm, 10);
+            let expYear = parseInt(yy, 10) + 2000;
+            const now = new Date();
+            const expDate = new Date(expYear, expMonth - 1, 1);
+            const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            if (expDate < thisMonth) {
+                valid = false;
+                msg = 'Card is expired';
+            }
+        }
+
+        if (!valid) {
+            e.target.classList.add('error');
+            if (errorMsg) errorMsg.textContent = msg;
+        } else {
+            e.target.classList.remove('error');
+            if (errorMsg) errorMsg.textContent = '';
+        }
+    });
+}
+    </script>        
+
+
+</html></body>

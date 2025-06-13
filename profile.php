@@ -5,116 +5,68 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-// Include database connection
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 $success_message = '';
 $error_message = '';
 $password_success = '';
 $password_error = '';
 
+$db = new Database();
+$user_id = $_SESSION['user']['user_id'];
+
+// Always fetch the latest user data from the database after update
+$user = $db->getUserById($user_id);
+
+// Profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // FIX: Use user_id instead of id
-    $user_id = $_SESSION['user']['user_id'];
-    
-    // Profile update
     if (isset($_POST['update_profile'])) {
-        $name = $_POST['name'];
-        $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
-        
-        // FIX: Use user_id in SQL and binding
-        $stmt = $conn->prepare("UPDATE users SET name = ?, phone = ? WHERE user_id = ?");
-        $stmt->bind_param("ssi", $name, $phone, $user_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['user']['name'] = $name;
-            $_SESSION['user']['phone'] = $phone;
+        $first_name = trim($_POST['first_name'] ?? '');
+        $last_name = trim($_POST['last_name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $email = $user['email']; // Email is not editable here
+
+        $result = $db->updateUserProfileFull([
+            'user_id' => $user_id,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'email' => $email,
+            'phone' => $phone
+        ]);
+        if ($result['success']) {
+            // Refresh user data from DB after update
+            $user = $db->getUserById($user_id);
+            $_SESSION['user']['first_name'] = $user['first_name'];
+            $_SESSION['user']['last_name'] = $user['last_name'];
+            $_SESSION['user']['phone'] = $user['phone'];
             $success_message = 'Profile updated successfully!';
         } else {
-            $error_message = 'Failed to update profile: ' . $conn->error;
+            $error_message = 'Failed to update profile: ' . $result['error_message'];
         }
-        
-        $stmt->close();
     }
-    
+
     // Password change
     if (isset($_POST['change_password'])) {
         $current_password = $_POST['current_password'];
         $new_password = $_POST['new_password'];
         $confirm_password = $_POST['confirm_password'];
-        
-        // FIX: Use user_id in SQL and binding
-        $stmt = $conn->prepare("SELECT password FROM users WHERE user_id = ?");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user_data = $result->fetch_assoc();
-        $stmt->close();
-        
-        if (password_verify($current_password, $user_data['password'])) {
-            // Check if new passwords match
-            if ($new_password === $confirm_password) {
-                // Update password
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-                $stmt->bind_param("si", $hashed_password, $user_id);
-                
-                if ($stmt->execute()) {
-                    $password_success = 'Password changed successfully!';
-                } else {
-                    $password_error = 'Error updating password: ' . $conn->error;
-                }
-                
-                $stmt->close();
-            } else {
-                $password_error = 'New passwords do not match';
-            }
+        // Remove the method_exists() check and just call the method directly
+        $result = $db->changeUserPassword($user_id, $current_password, $new_password, $confirm_password);
+        if ($result['success']) {
+            $password_success = 'Password changed successfully!';
         } else {
-            $password_error = 'Current password is incorrect';
+            $password_error = $result['error_message'];
         }
     }
-    
+
     // Profile picture upload
     if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
-        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-        $max_size = 2 * 1024 * 1024; // 2MB
-        
-        if (!in_array($_FILES['profile_pic']['type'], $allowed_types)) {
-            $error_message = 'Only JPG, PNG and GIF images are allowed.';
-        } elseif ($_FILES['profile_pic']['size'] > $max_size) {
-            $error_message = 'Image must be less than 2MB in size.';
+        $result = $db->updateUserProfilePicture($user_id, $_FILES['profile_pic'], $_SESSION['user']['profile_pic'] ?? null);
+        if ($result['success']) {
+            $_SESSION['user']['profile_pic'] = $result['profile_pic'];
+            $success_message = 'Profile picture updated successfully!';
         } else {
-            // Create uploads directory if it doesn't exist
-            if (!file_exists('uploads/profiles')) {
-                mkdir('uploads/profiles', 0777, true);
-            }
-            
-            $ext = pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION);
-            $filename = 'uploads/profiles/profile_' . $user_id . '_' . time() . '.' . $ext;
-            
-            if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $filename)) {
-                // Remove old profile picture if it exists and is not the default
-                if (isset($_SESSION['user']['profile_pic']) && 
-                    $_SESSION['user']['profile_pic'] !== 'images/default-profile.png' &&
-                    file_exists($_SESSION['user']['profile_pic'])) {
-                    unlink($_SESSION['user']['profile_pic']);
-                }
-                
-                // FIX: Use user_id in SQL and binding
-                $stmt = $conn->prepare("UPDATE users SET profile_pic = ? WHERE user_id = ?");
-                $stmt->bind_param("si", $filename, $user_id);
-                
-                if ($stmt->execute()) {
-                    $_SESSION['user']['profile_pic'] = $filename;
-                    $success_message = 'Profile picture updated successfully!';
-                } else {
-                    $error_message = 'Failed to update profile picture in database: ' . $conn->error;
-                }
-                
-                $stmt->close();
-            } else {
-                $error_message = 'Failed to upload profile picture.';
-            }
+            $error_message = $result['error_message'];
         }
     }
 }
@@ -122,49 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $user = $_SESSION['user'];
 
 // Fetch user appointments
-$appointments = [];
-// FIX: Use user_id in SQL and binding
-$stmt = $conn->prepare('SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, s.service_id, s.name AS service_name, b.barber_id, b.name AS barber_name, a.notes
-    FROM appointments a
-    LEFT JOIN services s ON a.service_id = s.service_id
-    LEFT JOIN barbers b ON a.barber_id = b.barber_id
-    WHERE a.user_id = ?
-    ORDER BY a.appointment_date DESC, a.appointment_time DESC');
-$stmt->bind_param("i", $user['user_id']);
-$stmt->execute();
-$result = $stmt->get_result();
+$appointments = $db->getUserAppointments($user_id);
 
-while ($row = $result->fetch_assoc()) {
-    $appointments[] = $row;
-}
-$stmt->close();
-
-// Fetch user orders - with error handling for missing table
-$orders = [];
-try {
-    // Check if orders table exists
-    $result = $conn->query("SHOW TABLES LIKE 'orders'");
-    if ($result->num_rows > 0) {
-        // FIX: Use order_id and user_id in SQL and binding, and correct join
-        $stmt = $conn->prepare("SELECT o.order_id, o.created_at as order_date, o.total_amount, o.status, o.tracking_number, 
-                            COUNT(oi.order_item_id) as item_count 
-                            FROM orders o 
-                            LEFT JOIN order_items oi ON o.order_id = oi.order_id 
-                            WHERE o.user_id = ? 
-                            GROUP BY o.order_id
-                            ORDER BY o.created_at DESC");
-        $stmt->bind_param("i", $user['user_id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $orders[] = $row;
-        }
-        $stmt->close();
-    }
-} catch (Exception $e) {
-    $orders = [];
-}
+// Fetch user orders (with item count)
+$orders = $db->getUserOrdersSummary($user_id);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -226,9 +139,27 @@ try {
                                     </label>
                                 </div>
                                 <div class="profile-details">
-                                    <h2><?= htmlspecialchars($user['name']) ?></h2>
+                                    <h2>
+                                        <?php
+                                        if (!empty($user['first_name']) || !empty($user['last_name'])) {
+                                            echo htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
+                                        } else {
+                                            echo 'No name set';
+                                        }
+                                        ?>
+                                    </h2>
                                     <p class="profile-email"><?= htmlspecialchars($user['email']) ?></p>
-                                    <p class="member-since">Member since: <?= isset($user['created_at']) ? date('F Y', strtotime($user['created_at'])) : 'N/A' ?></p>
+                                    <p class="member-since">
+                                        <i class="fas fa-clock"></i> Member since:
+                                        <?php
+                                        if (!empty($user['created_at'])) {
+                                            $date = new DateTime($user['created_at']);
+                                            echo $date->format('M d, Y');
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+                                    </p>
                                 </div>
                             </div>
                             
@@ -236,10 +167,18 @@ try {
                                 <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display:none;" onchange="previewImage()">
                                 
                                 <div class="form-group">
-                                    <label for="name">Full Name</label>
+                                    <label for="first_name">First Name</label>
                                     <div class="input-icon-wrapper">
                                         <i class="fas fa-user input-icon"></i>
-                                        <input type="text" id="name" name="name" value="<?= htmlspecialchars($user['name']) ?>" required>
+                                        <input type="text" id="first_name" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="last_name">Last Name</label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input type="text" id="last_name" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
                                     </div>
                                 </div>
                                 
@@ -946,6 +885,10 @@ try {
                     icon: 'fas fa-calendar-times'
                 });
             }
+        });
+    </script>
+</body>
+</html>
         });
     </script>
 </body>

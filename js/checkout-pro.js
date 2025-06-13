@@ -228,186 +228,130 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Cart management
-    if (orderSummaryItems) {
-        // Get cart data
-        let cart = [];
-        
-        try {
-            const cartInput = document.querySelector('input[name="order_items"]');
-            if (cartInput && cartInput.value) {
-                cart = JSON.parse(cartInput.value);
-            }
-        } catch (e) {
-            console.error('Error parsing cart data:', e);
+    // Load cart from sessionStorage
+    let cart = [];
+    try {
+        const storedCart = sessionStorage.getItem('cart');
+        if (storedCart) {
+            cart = JSON.parse(storedCart);
+            console.log('Loaded cart:', cart); // <-- Add this line
         }
-        
-        // Update cart in session and localStorage
-        function updateCart(cart) {
-            // Update localStorage
-            localStorage.setItem('cart', JSON.stringify(cart));
-            
-            // Update session storage
-            if (typeof sessionStorage !== 'undefined') {
+    } catch (e) {
+        cart = [];
+    }
+
+    function renderOrderSummary(cart) {
+        if (!orderSummaryItems) return;
+        if (cart.length === 0) {
+            orderSummaryItems.innerHTML = `
+                <div class="empty-cart-message">
+                    <div class="empty-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <p>Your cart is now empty.</p>
+                    <a href="shop.php" class="btn-continue-shopping">Continue Shopping</a>
+                </div>
+            `;
+            recalculateTotals(cart);
+            return;
+        }
+        orderSummaryItems.innerHTML = '';
+        cart.forEach((item, idx) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'cart-item';
+            itemDiv.innerHTML = `
+                <div class="cart-item-info">
+                    <span class="cart-item-name">${item.name}</span>
+                    <span class="cart-item-price">$${item.price.toFixed(2)}</span>
+                </div>
+                <div class="cart-item-controls">
+                    <button class="decrease-qty" data-index="${idx}">-</button>
+                    <span class="cart-item-qty">${item.quantity}</span>
+                    <button class="increase-qty" data-index="${idx}">+</button>
+                    <button class="remove-item-btn" data-index="${idx}"><i class="fas fa-trash"></i></button>
+                    <span class="item-subtotal">$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            `;
+            orderSummaryItems.appendChild(itemDiv);
+        });
+        recalculateTotals(cart);
+        attachCartHandlers();
+    }
+
+    function attachCartHandlers() {
+        orderSummaryItems.querySelectorAll('.increase-qty').forEach(btn => {
+            btn.onclick = function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                cart[idx].quantity += 1;
                 sessionStorage.setItem('cart', JSON.stringify(cart));
-            }
-            
-            // Update server session
-            fetch('includes/save_cart_session.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ cart: cart })
-            }).catch(error => console.error('Error saving cart:', error));
-            
-            // Update hidden input
-            document.querySelector('input[name="order_items"]').value = JSON.stringify(cart);
-        }
-        
-        // Recalculate totals
-        function recalculateTotals(cart) {
-            let subtotal = 0;
-            let itemCount = 0;
-            
-            cart.forEach(item => {
-                subtotal += item.price * item.quantity;
-                itemCount += item.quantity;
-            });
-            
-            const tax = subtotal * TAX_RATE;
-            const total = subtotal + tax + SHIPPING_COST;
-            
-            // Update displays
-            if (subtotalDisplay) subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
-            if (taxDisplay) taxDisplay.textContent = '$' + tax.toFixed(2);
-            if (totalDisplay) totalDisplay.textContent = '$' + total.toFixed(2);
-            if (finalTotalDisplay) finalTotalDisplay.textContent = '$' + total.toFixed(2);
-            
-            // Update hidden inputs
-            document.querySelector('input[name="subtotal"]').value = subtotal;
-            document.querySelector('input[name="tax"]').value = tax;
-            document.querySelector('input[name="total"]').value = total;
-            
-            // Update item count
-            const itemCountDisplay = document.querySelector('.item-count');
-            if (itemCountDisplay) {
-                itemCountDisplay.textContent = itemCount + (itemCount !== 1 ? ' items' : ' item');
-            }
-            
-            return { subtotal, tax, total, itemCount };
-        }
-        
-        // Handle quantity and removal events
-        orderSummaryItems.addEventListener('click', function(e) {
-            // Decrease quantity
-            if (e.target.classList.contains('decrease-qty')) {
-                const itemId = e.target.getAttribute('data-id');
-                const itemIndex = cart.findIndex(item => item.id == itemId);
-                
-                if (itemIndex !== -1 && cart[itemIndex].quantity > 1) {
-                    cart[itemIndex].quantity--;
-                    
-                    // Update display
-                    const qtyElement = e.target.nextElementSibling;
-                    qtyElement.textContent = cart[itemIndex].quantity;
-                    
-                    const itemElement = e.target.closest('.cart-item');
-                    const subtotalElement = itemElement.querySelector('.item-subtotal');
-                    subtotalElement.textContent = '$' + (cart[itemIndex].price * cart[itemIndex].quantity).toFixed(2);
-                    
-                    // Pulse animation for feedback
-                    subtotalElement.classList.add('price-update');
-                    setTimeout(() => {
-                        subtotalElement.classList.remove('price-update');
-                    }, 700);
-                    
-                    // Update totals
-                    recalculateTotals(cart);
-                    updateCart(cart);
+                renderOrderSummary(cart);
+            };
+        });
+        orderSummaryItems.querySelectorAll('.decrease-qty').forEach(btn => {
+            btn.onclick = function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                if (cart[idx].quantity > 1) {
+                    cart[idx].quantity -= 1;
+                    sessionStorage.setItem('cart', JSON.stringify(cart));
+                    renderOrderSummary(cart);
                 }
-            }
-            
-            // Increase quantity
-            if (e.target.classList.contains('increase-qty')) {
-                const itemId = e.target.getAttribute('data-id');
-                const itemIndex = cart.findIndex(item => item.id == itemId);
-                
-                if (itemIndex !== -1) {
-                    cart[itemIndex].quantity++;
-                    
-                    // Update display
-                    const qtyElement = e.target.previousElementSibling;
-                    qtyElement.textContent = cart[itemIndex].quantity;
-                    
-                    const itemElement = e.target.closest('.cart-item');
-                    const subtotalElement = itemElement.querySelector('.item-subtotal');
-                    subtotalElement.textContent = '$' + (cart[itemIndex].price * cart[itemIndex].quantity).toFixed(2);
-                    
-                    // Pulse animation for feedback
-                    subtotalElement.classList.add('price-update');
-                    setTimeout(() => {
-                        subtotalElement.classList.remove('price-update');
-                    }, 700);
-                    
-                    // Update totals
-                    recalculateTotals(cart);
-                    updateCart(cart);
-                }
-            }
-            
-            // Remove item
-            if (e.target.classList.contains('remove-item-btn') || e.target.closest('.remove-item-btn')) {
-                const button = e.target.classList.contains('remove-item-btn') ? 
-                    e.target : e.target.closest('.remove-item-btn');
-                const itemId = button.getAttribute('data-id');
-                const itemIndex = cart.findIndex(item => item.id == itemId);
-                
-                if (itemIndex !== -1) {
-                    cart.splice(itemIndex, 1);
-                    
-                    // Remove from display with animation
-                    const itemElement = button.closest('.cart-item');
-                    itemElement.classList.add('removing');
-                    
-                    setTimeout(() => {
-                        itemElement.remove();
-                        
-                        // Check if cart is now empty
-                        if (cart.length === 0) {
-                            // Create a custom message element
-                            const emptyMessage = document.createElement('div');
-                            emptyMessage.className = 'empty-cart-message';
-                            emptyMessage.innerHTML = `
-                                <div class="empty-icon"><i class="fas fa-shopping-cart"></i></div>
-                                <p>Your cart is now empty.</p>
-                                <a href="shop.php" class="btn-continue-shopping">Continue Shopping</a>
-                            `;
-                            
-                            // Clear item area and add message
-                            orderSummaryItems.innerHTML = '';
-                            orderSummaryItems.appendChild(emptyMessage);
-                            
-                            // Redirect after delay
-                            setTimeout(() => {
-                                window.location.href = 'shop.php';
-                            }, 3000);
-                            
-                            return;
-                        }
-                        
-                        // Update totals
-                        recalculateTotals(cart);
-                        updateCart(cart);
-                    }, 300);
-                }
-            }
+            };
+        });
+        orderSummaryItems.querySelectorAll('.remove-item-btn').forEach(btn => {
+            btn.onclick = function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                cart.splice(idx, 1);
+                sessionStorage.setItem('cart', JSON.stringify(cart));
+                renderOrderSummary(cart);
+            };
         });
     }
-    
+
+    function recalculateTotals(cart) {
+        let subtotal = 0;
+        let itemCount = 0;
+        cart.forEach(item => {
+            subtotal += item.price * item.quantity;
+            itemCount += item.quantity;
+        });
+        const tax = subtotal * TAX_RATE;
+        const total = subtotal + tax + SHIPPING_COST;
+
+        if (subtotalDisplay) subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
+        if (taxDisplay) taxDisplay.textContent = '$' + tax.toFixed(2);
+        if (totalDisplay) totalDisplay.textContent = '$' + total.toFixed(2);
+        if (finalTotalDisplay) finalTotalDisplay.textContent = '$' + total.toFixed(2);
+
+        if (document.querySelector('input[name="subtotal"]')) document.querySelector('input[name="subtotal"]').value = subtotal;
+        if (document.querySelector('input[name="tax"]')) document.querySelector('input[name="tax"]').value = tax;
+        if (document.querySelector('input[name="total"]')) document.querySelector('input[name="total"]').value = total;
+
+        const itemCountDisplay = document.querySelector('.item-count');
+        if (itemCountDisplay) {
+            itemCountDisplay.textContent = itemCount + (itemCount !== 1 ? ' items' : ' item');
+        }
+    }
+
+    // Render cart and attach handlers on load
+    if (orderSummaryItems) {
+        renderOrderSummary(cart);
+    }
+
     // Form submission
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
+            // Prevent order if cart is empty
+            if (!cart || cart.length === 0) {
+                e.preventDefault();
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.warning({
+                        title: 'Cart Empty',
+                        message: 'Please add items to your cart before placing an order.',
+                        icon: 'fas fa-shopping-cart'
+                    });
+                } else {
+                    alert('Please add items to your cart before placing an order.');
+                }
+                return false;
+            }
             // Check terms agreement
             const termsCheckbox = document.getElementById('terms');
             if (!termsCheckbox.checked) {
@@ -463,3 +407,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (paymentSection) paymentSection.style.opacity = '0';
     if (reviewSection) reviewSection.style.opacity = '0';
 });
+

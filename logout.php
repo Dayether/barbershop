@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'database.php';
 
 // Clear all session variables
 $_SESSION = array();

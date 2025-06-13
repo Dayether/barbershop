@@ -2,9 +2,12 @@
 // Start output buffering at the very beginning
 ob_start();
 session_start();
+require_once '../database.php';
 
-// Check if user is logged in and is admin (account_type = 1)
-if (!isset($_SESSION['user']) || $_SESSION['user']['account_type'] != 1) {
+$db = new Database();
+
+// Use Database methods for authentication and admin check
+if (!$db->isUserLoggedIn() || !$db->isUserAdmin($_SESSION['user']['user_id'])) {
     header("Location: ../login.php");
     exit();
 }

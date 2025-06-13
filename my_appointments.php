@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'database.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
@@ -7,21 +8,13 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-// Include database connection
-require_once 'includes/db_connection.php';
-
 $user_id = $_SESSION['user']['user_id'];
+$db = new Database();
 
 // Handle appointment cancellation (set status to 'cancelled' instead of deleting)
 if (isset($_GET['cancel_id']) && is_numeric($_GET['cancel_id'])) {
     $cancel_id = intval($_GET['cancel_id']);
-    // Only allow cancelling user's own pending/confirmed appointments
-    $stmt = $conn->prepare("UPDATE appointments SET status = 'cancelled' WHERE appointment_id = ? AND user_id = ? AND status IN ('pending', 'confirmed')");
-    $stmt->bind_param("ii", $cancel_id, $user_id);
-    $stmt->execute();
-    $stmt->close();
-    // Optionally, add to appointment_history
-    // $conn->query("INSERT INTO appointment_history (appointment_id, action, notes, user_id) VALUES ($cancel_id, 'cancel', 'Cancelled by user', $user_id)");
+    $db->cancelUserAppointment($cancel_id, $user_id);
     header("Location: my_appointments.php?cancelled=1");
     exit;
 }
@@ -29,62 +22,14 @@ if (isset($_GET['cancel_id']) && is_numeric($_GET['cancel_id'])) {
 // Handle appointment deletion (user can delete cancelled appointments)
 if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
     $delete_id = intval($_GET['delete_id']);
-    // Only allow deleting user's own cancelled appointments
-    $stmt = $conn->prepare("DELETE FROM appointments WHERE appointment_id = ? AND user_id = ? AND status = 'cancelled'");
-    $stmt->bind_param("ii", $delete_id, $user_id);
-    $stmt->execute();
-    $stmt->close();
-    // Optionally, also delete related appointment_history entries
-    // $conn->query("DELETE FROM appointment_history WHERE appointment_id = $delete_id");
+    $db->deleteUserCancelledAppointment($delete_id, $user_id);
     header("Location: my_appointments.php?deleted=1");
     exit;
 }
 
-// Get appointments for this user - optimized query with better structure
-$appointments = [];
-
-// First, check if we need to filter by status from query params
+// Get appointments for this user (with optional status filter)
 $status_filter = isset($_GET['status']) ? $_GET['status'] : null;
-$where_clause = "WHERE a.user_id = ?";
-$params = [$user_id];
-$types = "i";
-
-// Add status filter if provided
-if ($status_filter && in_array($status_filter, ['pending', 'confirmed', 'completed', 'cancelled'])) {
-    $where_clause .= " AND a.status = ?";
-    $params[] = $status_filter;
-    $types .= "s";
-}
-
-// Build query with proper indexing hints and join optimization
-$query = "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.notes, 
-          s.name AS service_name, s.duration, s.price, s.service_id,
-          b.name AS barber_name, b.barber_id
-          FROM appointments a 
-          LEFT JOIN services s ON a.service_id = s.service_id 
-          LEFT JOIN barbers b ON a.barber_id = b.barber_id 
-          $where_clause
-          ORDER BY 
-            CASE 
-                WHEN a.status = 'pending' OR a.status = 'confirmed' THEN 0
-                ELSE 1
-            END,
-            CASE 
-                WHEN a.appointment_date >= CURDATE() THEN 0
-                ELSE 1
-            END,
-            a.appointment_date ASC, 
-            a.appointment_time ASC";
-
-$stmt = $conn->prepare($query);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$result = $stmt->get_result();
-
-while ($row = $result->fetch_assoc()) {
-    $appointments[] = $row;
-}
-$stmt->close();
+$appointments = $db->getUserAppointments($user_id, $status_filter);
 
 // Get upcoming appointments count for highlighting
 $upcoming_count = 0;
@@ -268,16 +213,7 @@ foreach ($appointments as $appointment) {
                                             <i class="fas fa-times-circle"></i> Cancel
                                         </a>
                                     </div>
-                                <?php elseif ($appointment['status'] == 'completed'): ?>
-                                    <div class="appointment-actions">
-                                        <a href="book_again.php?service_id=<?php echo $appointment['service_id']; ?>" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-redo"></i> Book Again
-                                        </a>
-                                        <a href="review.php?appointment_id=<?php echo $appointment['appointment_id']; ?>" class="btn btn-sm btn-outline">
-                                            <i class="fas fa-star"></i> Leave Review
-                                        </a>
-                                    </div>
-                                <?php elseif ($appointment['status'] == 'cancelled'): ?>
+                                <?php elseif ($appointment['status'] == 'completed' || $appointment['status'] == 'cancelled'): ?>
                                     <div class="appointment-actions">
                                         <a href="#" class="btn btn-sm btn-danger" onclick="confirmDeleteAppointment(<?php echo $appointment['appointment_id']; ?>)">
                                             <i class="fas fa-trash"></i> Delete
@@ -395,10 +331,14 @@ foreach ($appointments as $appointment) {
         iziToast.success({
             title: 'Deleted',
             message: 'Appointment deleted successfully.',
-            icon: 'fas fa-check-circle'
+            icon: 'fas fa-check-circle',
+            position: 'topRight', // Show in upper right
+            timeout: 4000
         });
     });
     </script>
     <?php endif; ?>
 </body>
 </html>
+
+

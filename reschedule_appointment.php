@@ -13,30 +13,21 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit;
 }
 
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
-$appointment_id = $_GET['id'];
-$user_id = $_SESSION['user']['user_id']; // FIXED: use correct session key
+$appointment_id = intval($_GET['id']);
+$user_id = $_SESSION['user']['user_id'];
 $errors = [];
 $success_message = '';
 
-// Get appointment details - only for the logged-in user
-$stmt = $conn->prepare("SELECT a.*, s.name as service_name, s.duration, s.price, b.name as barber_name 
-                        FROM appointments a 
-                        LEFT JOIN services s ON a.service_id = s.service_id
-                        LEFT JOIN barbers b ON a.barber_id = b.barber_id
-                        WHERE a.appointment_id = ? AND a.user_id = ? 
-                        AND (a.status = 'pending' OR a.status = 'confirmed')");
-$stmt->bind_param("ii", $appointment_id, $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$db = new Database();
 
-if ($result->num_rows === 0) {
+// Get appointment details - only for the logged-in user
+$appointment = $db->getAppointmentForReschedule($appointment_id, $user_id);
+if (!$appointment) {
     header('Location: my_appointments.php?error=not_found');
     exit;
 }
-
-$appointment = $result->fetch_assoc();
 
 // Process form submission for rescheduling
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,69 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Please select a new appointment time';
     }
 
-    // Double-booking check
+    // Double-booking check and update
     if (empty($errors)) {
-        $barber_id = $appointment['barber_id'];
-        if (empty($barber_id)) {
-            // Check if any barber is already booked at this date/time for this service, excluding this appointment
-            $check_sql = "SELECT COUNT(*) FROM appointments WHERE appointment_date = ? AND appointment_time = ? AND service_id = ? AND appointment_id != ? AND status IN ('pending', 'confirmed')";
-            $check_stmt = $conn->prepare($check_sql);
-            $check_stmt->bind_param("ssii", $new_date, $new_time, $appointment['service_id'], $appointment_id);
-        } else {
-            // Check if this barber is already booked at this date/time, excluding this appointment
-            $check_sql = "SELECT COUNT(*) FROM appointments WHERE appointment_date = ? AND appointment_time = ? AND barber_id = ? AND appointment_id != ? AND status IN ('pending', 'confirmed')";
-            $check_stmt = $conn->prepare($check_sql);
-            $check_stmt->bind_param("ssii", $new_date, $new_time, $barber_id, $appointment_id);
-        }
-        $check_stmt->execute();
-        $check_stmt->bind_result($count);
-        $check_stmt->fetch();
-        $check_stmt->close();
-
-        if ($count > 0) {
-            $errors[] = "The selected date and time is already booked. Please choose another slot.";
-        }
-    }
-
-    // If no errors, update appointment
-    if (empty($errors)) {
-        // Add to appointment history first
-        $notes = 'Appointment rescheduled by customer from ' . 
-                date('F j, Y', strtotime($appointment['appointment_date'])) . 
-                ' at ' . date('g:i A', strtotime($appointment['appointment_time'])) . 
-                ' to ' . date('F j, Y', strtotime($new_date)) . 
-                ' at ' . date('g:i A', strtotime($new_time));
-        
-        $stmt = $conn->prepare("INSERT INTO appointment_history (appointment_id, action, notes, user_id) VALUES (?, 'reschedule', ?, ?)");
-        $stmt->bind_param("isi", $appointment_id, $notes, $user_id);
-        $stmt->execute();
-        
-        // Update appointment
-        $stmt = $conn->prepare("UPDATE appointments SET appointment_date = ?, appointment_time = ? WHERE appointment_id = ? AND user_id = ?");
-        $stmt->bind_param("ssii", $new_date, $new_time, $appointment_id, $user_id);
-        
-        if ($stmt->execute()) {
+        $result = $db->rescheduleAppointment($appointment, $appointment_id, $user_id, $new_date, $new_time);
+        if ($result['success']) {
             $success_message = 'Your appointment has been successfully rescheduled!';
-            
-            // Update the appointment variable to reflect the changes
             $appointment['appointment_date'] = $new_date;
             $appointment['appointment_time'] = $new_time;
         } else {
-            $errors[] = 'There was a problem rescheduling your appointment. Please try again.';
+            $errors[] = $result['error_message'];
         }
     }
 }
 
 // Get available barbers
-$barbers_query = "SELECT * FROM barbers WHERE active = 1";
-$barbers_result = $conn->query($barbers_query);
-$barbers = [];
-
-if ($barbers_result && $barbers_result->num_rows > 0) {
-    while ($row = $barbers_result->fetch_assoc()) {
-        $barbers[] = $row;
-    }
-}
+$barbers = $db->getActiveBarbers();
 
 // For demonstration purposes - available time slots
 function generateTimeSlots() {
@@ -567,3 +510,4 @@ $available_times = generateTimeSlots();
     </script>
 </body>
 </html>
+                       

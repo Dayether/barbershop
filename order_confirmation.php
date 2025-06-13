@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 // Get order ID from URL parameter
 $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
@@ -11,73 +11,45 @@ if ($order_id <= 0) {
     exit;
 }
 
-// Get order details
 $order = null;
 $order_items = [];
 
 try {
-    // Get order
-    $stmt = $conn->prepare("SELECT o.*, DATE_FORMAT(o.created_at, '%M %d, %Y') as order_date 
-                           FROM orders o 
-                           WHERE o.order_id = ?");
-    $stmt->bind_param("i", $order_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        $order = $result->fetch_assoc();
-        
+    $db = new Database();
+    $order = $db->getOrderDetails($order_id);
+
+    if ($order) {
         // Verify the order belongs to the logged-in user if user is logged in
         if (isset($_SESSION['user']) && $order['user_id'] != $_SESSION['user']['user_id']) {
-            // If not admin and trying to access someone else's order
             if (!isset($_SESSION['user']['role']) || $_SESSION['user']['role'] !== 'admin') {
                 header('Location: orders.php');
                 exit;
             }
         }
-        
-        // Get order items
-        $stmt = $conn->prepare("SELECT oi.*, p.name, p.image 
-                               FROM order_items oi 
-                               JOIN products p ON oi.product_id = p.product_id 
-                               WHERE oi.order_id = ?");
-        $stmt->bind_param("i", $order_id);
-        $stmt->execute();
-        $items_result = $stmt->get_result();
-        
+        $order_items = $db->getOrderItems($order_id);
+
         // Calculate totals from items if not available in order
         $subtotal = 0;
-        
-        while ($item = $items_result->fetch_assoc()) {
-            $order_items[] = $item;
+        foreach ($order_items as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }
-        
-        // Set default values for missing fields
         if (!isset($order['subtotal']) || $order['subtotal'] === null) {
             $order['subtotal'] = $subtotal;
         }
-        
         if (!isset($order['shipping_cost']) || $order['shipping_cost'] === null) {
             $order['shipping_cost'] = 0;
         }
-        
         if (!isset($order['tax_amount']) || $order['tax_amount'] === null) {
-            // Default tax calculation (e.g., 10% of subtotal) if missing
             $order['tax_amount'] = $subtotal * 0.1;
         }
-        
-        // Recalculate total amount if needed
         if (!isset($order['total_amount']) || $order['total_amount'] === null) {
             $order['total_amount'] = $order['subtotal'] + $order['shipping_cost'] + $order['tax_amount'];
         }
     } else {
-        // Order not found, redirect
         header('Location: shop.php');
         exit;
     }
 } catch (Exception $e) {
-    // Log error and redirect
     error_log("Error getting order details: " . $e->getMessage());
     header('Location: shop.php');
     exit;
@@ -199,6 +171,34 @@ try {
                             <div class="summary-row">
                                 <span class="summary-label">Shipping:</span>
                                 <span class="summary-value">$<?= number_format($order['shipping_cost'] ?? 0, 2) ?></span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="summary-label">Tax:</span>
+                                <span class="summary-value">$<?= number_format($order['tax_amount'] ?? 0, 2) ?></span>
+                            </div>
+                            <div class="summary-row total">
+                                <span class="summary-label">Total:</span>
+                                <span class="summary-value">$<?= number_format($order['total_amount'] ?? 0, 2) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="confirmation-actions">
+                    <a href="shop.php" class="btn btn-secondary">Continue Shopping</a>
+                    <?php if (isset($_SESSION['user'])): ?>
+                        <a href="orders.php" class="btn btn-primary">View All Orders</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'includes/footer.php'; ?>
+
+    <script src="js/common.js"></script>
+</body>
+</html>
                             </div>
                             <div class="summary-row">
                                 <span class="summary-label">Tax:</span>

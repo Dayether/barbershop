@@ -1,19 +1,13 @@
 <?php
 session_start();
+require_once 'database.php';
+
 if (isset($_SESSION['user'])) {
     header('Location: index.php');
     exit;
 }
 
-// Include autoloader
-require_once 'includes/autoload.php';
-
-// Initialize database connection
-$database = new Database();
-$db = $database->connect();
-
-// Initialize user object
-$user = new User($db);
+$db = new Database();
 
 $error = '';
 $success = '';
@@ -24,67 +18,59 @@ $formData = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate and sanitize input
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
-    
-    // Store form data for repopulating fields if errors occur
+
     $formData = [
         'first_name' => $first_name,
         'last_name' => $last_name,
         'email' => $email,
     ];
-    
-    // Validation
+
     $errors = [];
-    
+
     if (empty($first_name)) {
         $errors[] = 'First name is required';
     } elseif (strlen($first_name) < 2 || strlen($first_name) > 50) {
         $errors[] = 'First name must be between 2 and 50 characters';
     }
-    
+
     if (empty($last_name)) {
         $errors[] = 'Last name is required';
     } elseif (strlen($last_name) < 2 || strlen($last_name) > 50) {
         $errors[] = 'Last name must be between 2 and 50 characters';
     }
-    
+
     if (empty($email)) {
         $errors[] = 'Email is required';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Invalid email format';
     }
-    
+
     if (empty($password)) {
         $errors[] = 'Password is required';
     } elseif (strlen($password) < 8) {
         $errors[] = 'Password must be at least 8 characters';
     }
-    
+
     if (!isset($_POST['terms']) || $_POST['terms'] !== 'on') {
         $errors[] = 'You must agree to the terms and conditions';
     }
-    
-    // If validation passes, proceed with registration
+
     if (empty($errors)) {
-        // Check if email already exists
-        if ($user->emailExists($email)) {
-            $error = 'Email already registered';
+        // Remove redundant server-side emailExists check, since registerUser already checks
+        $result = $db->registerUser($first_name, $last_name, $email, $password);
+        if ($result['success']) {
+            $_SESSION['registration_success'] = true;
+            $_SESSION['registered_email'] = $email;
+            $_SESSION['registered_first_name'] = $first_name;
+            $_SESSION['registered_last_name'] = $last_name;
+            header('Location: login.php');
+            exit;
         } else {
-            // Register user
-            if ($user->register($first_name, $last_name, $email, $password)) {
-                // Set success message and redirect to login
-                $_SESSION['registration_success'] = true;
-                $_SESSION['registered_email'] = $email;
-                
-                header('Location: login.php');
-                exit;
-            } else {
-                $error = 'Registration failed. Please try again.';
-            }
+            $error = !empty($result['error_message']) ? $result['error_message'] : 'Registration failed. Please try again.';
         }
     } else {
         $error = implode('<br>', $errors);
@@ -232,7 +218,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             function validateFirstName() {
                 const firstNameInput = document.getElementById('first_name');
                 const value = firstNameInput.value.trim();
-                
                 if (!value) {
                     setInvalid(firstNameInput, 'First name is required');
                     return false;
@@ -252,7 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             function validateLastName() {
                 const lastNameInput = document.getElementById('last_name');
                 const value = lastNameInput.value.trim();
-                
                 if (!value) {
                     setInvalid(lastNameInput, 'Last name is required');
                     return false;
@@ -273,7 +257,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const emailInput = document.getElementById('email');
                 const value = emailInput.value.trim();
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                
                 if (!value) {
                     setInvalid(emailInput, 'Email address is required');
                     return false;
@@ -286,43 +269,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return true;
                 }
             }
-            
+
             // AJAX function to check if email exists
             let emailCheckTimer;
             function checkEmailExists(email, inputElement) {
-                // Clear previous timeout to prevent multiple requests
                 clearTimeout(emailCheckTimer);
-                
-                // Set a temporary "checking" state
                 inputElement.classList.remove('is-valid', 'is-invalid');
                 inputElement.classList.add('is-validating');
-                
-                // Find the feedback elements
                 const invalidFeedback = inputElement.nextElementSibling.nextElementSibling;
                 const validFeedback = invalidFeedback.nextElementSibling;
-                
-                // Add a slight delay to avoid making requests on every keystroke
                 emailCheckTimer = setTimeout(() => {
-                    // Make AJAX request
                     fetch(`ajax/check_email.php?email=${encodeURIComponent(email)}`)
                         .then(response => response.json())
                         .then(data => {
                             inputElement.classList.remove('is-validating');
-                            
                             if (data.valid) {
                                 setValid(inputElement);
-                                validFeedback.textContent = data.message;
+                                if (validFeedback) validFeedback.textContent = data.message;
                             } else {
                                 setInvalid(inputElement, data.message);
                             }
                         })
-                        .catch(error => {
+                        .catch(() => {
                             inputElement.classList.remove('is-validating');
-                            console.error('Email validation error:', error);
-                            // If AJAX fails, still allow submission but don't mark as valid
                             inputElement.classList.remove('is-valid', 'is-invalid');
                         });
-                }, 500); // 500ms delay to reduce server load
+                }, 500);
             }
             
             // Password validation function with strength meter
@@ -419,50 +391,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('first_name').addEventListener('input', validateFirstName);
             document.getElementById('last_name').addEventListener('input', validateLastName);
             
-            // For email, use input and blur events
+            // Email field: only trigger AJAX check if valid format
             const emailInput = document.getElementById('email');
             emailInput.addEventListener('input', function() {
-                if (this.value.trim() !== '') {
-                    // Only validate format on input
-                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailPattern.test(this.value.trim())) {
-                        setInvalid(this, 'Please enter a valid email address');
-                    } else {
-                        // Remove any previous error, but don't validate against server yet
-                        this.classList.remove('is-invalid');
-                    }
+                this.classList.remove('is-invalid', 'is-valid');
+                const value = this.value.trim();
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!value) {
+                    setInvalid(this, 'Email address is required');
+                } else if (!emailPattern.test(value)) {
+                    setInvalid(this, 'Please enter a valid email address');
+                } else {
+                    // Only trigger AJAX check if valid format
+                    checkEmailExists(value, this);
                 }
             });
-            
-            emailInput.addEventListener('blur', validateEmail); // Full validation on blur
-            
+            emailInput.addEventListener('blur', validateEmail);
+
             document.getElementById('password').addEventListener('input', validatePassword);
             document.getElementById('terms').addEventListener('change', validateTerms);
-            
+
             // Form submission validation
             form.addEventListener('submit', function(event) {
-                // Run all validations
                 const isFirstNameValid = validateFirstName();
                 const isLastNameValid = validateLastName();
-                let isEmailValid = validateEmail();
+                const isEmailValid = validateEmail();
                 const isPasswordValid = validatePassword();
                 const areTermsAccepted = validateTerms();
-                
-                // If email is being checked, delay form submission
                 if (emailInput.classList.contains('is-validating')) {
                     event.preventDefault();
-                    
-                    // Wait for validation to complete before checking again
                     setTimeout(() => {
                         if (!emailInput.classList.contains('is-invalid')) {
-                            // If email is valid after check, submit the form
                             form.submit();
                         }
                     }, 800);
                 }
-                
-                // If any validation fails, prevent form submission
-                if (!isFirstNameValid || !isLastNameValid || 
+                if (!isFirstNameValid || !isLastNameValid ||
+                    emailInput.classList.contains('is-invalid') ||
+                    !isPasswordValid || !areTermsAccepted) {
+                    event.preventDefault();
+                }
+            });
+            
+            // Initial validation to show any pre-filled fields
+            if (document.getElementById('first_name').value) validateFirstName();
+            if (document.getElementById('last_name').value) validateLastName();
+            if (document.getElementById('email').value) validateEmail();
+        });
+    </script>
+</body>
+</html>
+                    event.preventDefault();
+                }
+            });
+            // Initial validation to show any pre-filled fields
+            // Initial validation to show any pre-filled fieldslidateFirstName();
+            if (document.getElementById('first_name').value) validateFirstName();
+            if (document.getElementById('last_name').value) validateLastName();
+            if (document.getElementById('email').value) validateEmail();
+        });t>
+    </script>
+</body>
+</html>
                     emailInput.classList.contains('is-invalid') || 
                     !isPasswordValid || !areTermsAccepted) {
                     event.preventDefault();

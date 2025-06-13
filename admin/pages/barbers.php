@@ -1,198 +1,96 @@
 <?php
-// Include Barber model
-require_once 'models/Barber.php';
-require_once 'includes/notifications.php';
+require_once '../database.php';
+require_once 'includes/notifications.php'; // <-- Add this if not already present
+$db = new Database();
 
-// Database connection
-$db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Instantiate Barber object
-$barberObj = new Barber($db);
-
-// Set default view mode to list
 $viewMode = 'list';
 $barber = null;
+$barbers = [];
+$errorMsg = '';
+$successMsg = '';
+$page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+$perPage = 10;
 
-// Check if edit mode is requested
+// Edit mode
 if (isset($_GET['edit'])) {
     $viewMode = 'edit';
-    $id = $_GET['edit'];
-    
-    // Get barber details using the model
-    $barberObj->id = $id;
-    if ($barberObj->readSingle()) {
-        $barber = [
-            'id' => $barberObj->id,
-            'name' => $barberObj->name,
-            'bio' => $barberObj->bio,
-            'image' => $barberObj->image,
-            'active' => $barberObj->active
-        ];
-    } else {
-        setErrorToast("Barber not found.");
+    $id = (int)$_GET['edit'];
+    $barber = $db->getBarberById($id);
+    if (!$barber) {
+        $errorMsg = "Barber not found.";
         $viewMode = 'list';
     }
 }
 
 // Handle edit form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_barber'])) {
-    try {
-        // Collect form data and sanitize
-        $barberObj->id = $_POST['barber_id'];
-        $barberObj->name = htmlspecialchars($_POST['name']);
-        $barberObj->bio = htmlspecialchars($_POST['bio']);
-        $barberObj->active = isset($_POST['active']) ? 1 : 0;
-        
-        // Handle image upload if a new one is provided
-        if (!empty($_FILES['image']['name'])) {
-            $target_dir = "../uploads/barbers/";
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = 'barber_' . time() . '.' . $file_extension;
-            $target_file = $target_dir . $filename;
-            
-            // Upload file
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-                $barberObj->image = 'uploads/barbers/' . $filename;
-            } else {
-                setErrorToast("Failed to upload image.");
-            }
-        }
-        
-        // Update the barber using model
-        if ($barberObj->update()) {
-            setSuccessToast("Barber updated successfully!");
-            $viewMode = 'list'; // Switch back to list view after update
-        } else {
-            setErrorToast("Failed to update barber.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $updateData = [
+        'barber_id' => $_POST['barber_id'],
+        'name' => $_POST['name'],
+        'bio' => $_POST['bio'],
+        'active' => isset($_POST['active']) ? 1 : 0,
+        'image' => $_FILES['image'] ?? null
+    ];
+    $result = $db->updateBarber($updateData);
+    if ($result['success']) {
+        setSuccessToast("Barber updated successfully!");
+        $barber = $db->getBarberById($updateData['barber_id']);
+        $viewMode = 'list';
+        header("Location: ?page=barbers");
+        exit();
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
 // Handle new barber creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_barber'])) {
-    try {
-        // Collect form data and sanitize
-        $barberObj->name = htmlspecialchars($_POST['name']);
-        $barberObj->bio = htmlspecialchars($_POST['bio']);
-        $barberObj->active = isset($_POST['active']) ? 1 : 0;
-        
-        // Handle image upload
-        $barberObj->image = ''; // Default empty
-        
-        if (!empty($_FILES['image']['name'])) {
-            $target_dir = "../uploads/barbers/";
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = 'barber_' . time() . '.' . $file_extension;
-            $target_file = $target_dir . $filename;
-            
-            // Upload file
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-                $barberObj->image = 'uploads/barbers/' . $filename;
-            } else {
-                setErrorToast("Failed to upload image.");
-            }
-        }
-        
-        // Create the barber
-        if ($barberObj->create()) {
-            setSuccessToast("Barber added successfully!");
-        } else {
-            setErrorToast("Failed to add barber.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $createData = [
+        'name' => $_POST['name'],
+        'bio' => $_POST['bio'],
+        'active' => isset($_POST['active']) ? 1 : 0,
+        'image' => $_FILES['image'] ?? null
+    ];
+    $result = $db->createBarber($createData);
+    if ($result['success']) {
+        setSuccessToast("Barber added successfully!");
+        header("Location: ?page=barbers");
+        exit();
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
-// Delete barber
-if (isset($_GET['delete']) && !isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-    // Show confirmation modal through JavaScript
-    echo "<script>
-        iziToast.question({
-            title: 'Confirm Deletion',
-            message: 'Are you sure you want to delete this barber? This action cannot be undone.',
-            position: 'center',
-            buttons: [
-                ['<button><b>DELETE</b></button>', function (instance, toast) {
-                    instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                    window.location.href = '?page=barbers&delete=" . $id . "&confirm_delete=1';
-                }, true],
-                ['<button>CANCEL</button>', function (instance, toast) {
-                    instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                }]
-            ]
-        });
-    </script>";
-}
-
-// Process confirmed deletion
+// Handle delete
 if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-    
-    try {
-        // Get barber details first
-        $barberObj->id = $id;
-        $barberObj->readSingle();
-        $barberName = $barberObj->name;
-        
-        // Delete the barber
-        if ($barberObj->delete()) {
-            setSuccessToast("Barber \"$barberName\" deleted successfully!");
-        } else {
-            setErrorToast("Failed to delete barber.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $id = (int)$_GET['delete'];
+    $result = $db->deleteBarber($id);
+    if ($result['success']) {
+        setSuccessToast("Barber deleted successfully!");
+    } else {
+        setErrorToast($result['error_message']);
     }
+    header("Location: ?page=barbers");
+    exit();
 }
 
-// Toggle barber active status
+// Handle toggle active status
 if (isset($_POST['toggle_active'])) {
-    try {
-        $barberObj->id = $_POST['barber_id'];
-        if ($barberObj->toggleActive()) {
-            // Get current status after toggle
-            $barberObj->readSingle();
-            $status = $barberObj->active ? 'active' : 'inactive';
-            setSuccessToast("Barber is now $status.");
-        } else {
-            setErrorToast("Failed to update barber status.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $id = (int)$_POST['barber_id'];
+    $result = $db->toggleBarberActive($id);
+    if ($result['success']) {
+        $successMsg = "Barber status updated.";
+    } else {
+        $errorMsg = $result['error_message'];
     }
 }
 
 // Pagination for list view
 if ($viewMode === 'list') {
-    $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-    if (is_array($page)) {
-        $page = 1;
-    }
-    $perPage = 10;
-    
-    // Get total count
-    $totalBarbers = $barberObj->count();
+    $totalBarbers = $db->countBarbers();
     $totalPages = ceil($totalBarbers / $perPage);
-    if (is_array($totalPages)) {
-        $totalPages = 1;
-    }
-    
-    // Get barbers for current page
-    $stmt = $barberObj->read($page, $perPage);
-    $barbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $offset = ($page - 1) * $perPage;
+    $barbers = $db->getBarbers($perPage, $offset);
 }
 
 // If we're in "new" mode, set viewMode
@@ -480,6 +378,83 @@ function submitStatusForm(id) {
     // Submit the form
     form.submit();
 }
+</script>
+
+<style>
+/* Barber-specific styling */
+.barber-image {
+    border-radius: 6px !important;  /* Override the product image styling */
+}
+
+.product-info.description {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* Image upload container for barbers */
+.image-upload-container .current-image {
+    border-radius: 6px;
+}
+
+.image-upload-container .no-image {
+    border-radius: 6px;
+}
+</style>
+    
+
+<style>
+/* Barber-specific styling */
+.barber-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: var(--light-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.barber-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-image-small {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+}
+
+.barber-name-cell {
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.barber-bio {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Image upload container for barbers */
+.image-upload-container .current-image {
+    border-radius: 50%;
+}
+
+.image-upload-container .no-image {
+    border-radius: 50%;
+}
+</style>
+                        
+          
 </script>
 
 <style>

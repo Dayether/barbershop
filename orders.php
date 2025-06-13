@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'database.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user'])) {
@@ -7,13 +8,10 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-require_once 'includes/db_connection.php';
-
-// Get user's orders
-$orders = [];
 $user_id = $_SESSION['user']['user_id'];
+$db = new Database();
 
-// --- FIX: Handle address update for pending orders ---
+// Handle address update for pending orders
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_address_order_id'])) {
     $order_id = intval($_POST['edit_address_order_id']);
     $address = trim($_POST['address']);
@@ -21,104 +19,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_address_order_id
     $zip = trim($_POST['zip']);
     $country = trim($_POST['country']);
 
-    // Only allow update if order belongs to user and is pending
-    $stmt = $conn->prepare("UPDATE orders SET address = ?, city = ?, zip = ?, country = ? WHERE order_id = ? AND user_id = ? AND status = 'pending'");
-    $stmt->bind_param("ssssii", $address, $city, $zip, $country, $order_id, $user_id);
-
-    if ($stmt->execute() && $stmt->affected_rows > 0) {
+    $result = $db->updateOrderAddress($order_id, $user_id, $address, $city, $zip, $country);
+    if ($result['success']) {
         $_SESSION['order_message'] = "Shipping address updated successfully!";
         $_SESSION['order_message_type'] = "success";
     } else {
-        $_SESSION['order_message'] = "Failed to update address. Please try again or check if the order is still pending.";
+        $_SESSION['order_message'] = $result['error_message'];
         $_SESSION['order_message_type'] = "error";
     }
-    $stmt->close();
-    // Add a session flag for JS toast
     $_SESSION['address_updated'] = ($_SESSION['order_message_type'] === 'success') ? 'success' : 'error';
     header("Location: orders.php");
     exit;
 }
-// --- END FIX ---
 
 // Handle order cancellation (user can cancel their own pending orders)
 if (isset($_GET['cancel_order_id']) && is_numeric($_GET['cancel_order_id'])) {
     $cancel_order_id = intval($_GET['cancel_order_id']);
-    // Only allow cancelling user's own pending orders
-    $stmt = $conn->prepare("UPDATE orders SET status = 'cancelled' WHERE order_id = ? AND user_id = ? AND status = 'pending'");
-    $stmt->bind_param("ii", $cancel_order_id, $user_id);
-    if ($stmt->execute() && $stmt->affected_rows > 0) {
+    $result = $db->cancelUserOrder($cancel_order_id, $user_id);
+    if ($result['success']) {
         $_SESSION['order_message'] = "Order cancelled successfully!";
         $_SESSION['order_message_type'] = "success";
     } else {
-        $_SESSION['order_message'] = "Failed to cancel order. It may have already been processed or cancelled.";
+        $_SESSION['order_message'] = $result['error_message'];
         $_SESSION['order_message_type'] = "error";
     }
-    $stmt->close();
     $_SESSION['address_updated'] = $_SESSION['order_message_type'];
     header("Location: orders.php");
     exit;
 }
 
-// --- FIX: Handle order deletion for cancelled orders ---
+// Handle order deletion for cancelled or completed orders
 if (isset($_GET['delete_order_id']) && is_numeric($_GET['delete_order_id'])) {
     $delete_order_id = intval($_GET['delete_order_id']);
-    // Only allow deleting user's own cancelled orders
-    $stmt = $conn->prepare("DELETE FROM orders WHERE order_id = ? AND user_id = ? AND status = 'cancelled'");
-    $stmt->bind_param("ii", $delete_order_id, $user_id);
-    if ($stmt->execute() && $stmt->affected_rows > 0) {
+    $result = $db->deleteUserCancelledOrder($delete_order_id, $user_id);
+    if ($result['success']) {
         $_SESSION['order_message'] = "Order deleted successfully!";
         $_SESSION['order_message_type'] = "success";
     } else {
-        $_SESSION['order_message'] = "Failed to delete order. Only cancelled orders can be deleted.";
+        $_SESSION['order_message'] = $result['error_message'];
         $_SESSION['order_message_type'] = "error";
     }
-    $stmt->close();
     $_SESSION['address_updated'] = $_SESSION['order_message_type'];
     header("Location: orders.php");
     exit;
 }
-// --- END FIX ---
 
-try {
-    // Get orders
-    $stmt = $conn->prepare("
-        SELECT o.*, DATE_FORMAT(o.created_at, '%M %d, %Y') as order_date 
-        FROM orders o 
-        WHERE o.user_id = ? 
-        ORDER BY o.created_at DESC
-    ");
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    while ($row = $result->fetch_assoc()) {
-        $orders[] = $row;
+// Get user's orders (with items)
+$orders = $db->getUserOrdersSummary($user_id);
+
+// Fetch items for each order and ensure all required keys exist
+foreach ($orders as &$order) {
+    // Fetch order items
+    $order['items'] = $db->getOrderItems($order['order_id']);
+    // Fetch latest order details from DB to get up-to-date address fields
+    $order_details = $db->getOrderDetails($order['order_id']);
+    if ($order_details) {
+        $order['order_reference'] = $order_details['order_reference'] ?? '';
+        $order['address'] = $order_details['address'] ?? '';
+        $order['city'] = $order_details['city'] ?? '';
+        $order['zip'] = $order_details['zip'] ?? '';
+        $order['country'] = $order_details['country'] ?? '';
+        $order['order_date'] = $order_details['order_date'] ?? $order['order_date'];
+    } else {
+        if (!isset($order['order_reference'])) $order['order_reference'] = '';
+        if (!isset($order['address'])) $order['address'] = '';
+        if (!isset($order['city'])) $order['city'] = '';
+        if (!isset($order['zip'])) $order['zip'] = '';
+        if (!isset($order['country'])) $order['country'] = '';
     }
-    
-    // Get order items for each order
-    foreach ($orders as &$order) {
-        $order_items = [];
-        
-        $stmt = $conn->prepare("
-            SELECT oi.*, p.name, p.image 
-            FROM order_items oi 
-            LEFT JOIN products p ON oi.product_id = p.product_id 
-            WHERE oi.order_id = ?
-        ");
-        $stmt->bind_param("i", $order['order_id']);
-        $stmt->execute();
-        $items_result = $stmt->get_result();
-        
-        while ($item = $items_result->fetch_assoc()) {
-            $order_items[] = $item;
-        }
-        
-        $order['items'] = $order_items;
-    }
-    
-} catch (Exception $e) {
-    error_log("Error retrieving orders: " . $e->getMessage());
 }
+unset($order); // break reference
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -462,7 +432,7 @@ try {
                             <div class="order-header">
                                 <div class="order-id">
                                     <i class="fas fa-receipt"></i>
-                                    Order #<?= htmlspecialchars(substr($order['order_reference'], 0, 12)) ?>
+                                    Order #<?= htmlspecialchars($order['order_reference']) ?>
                                 </div>
                                 <div class="order-meta">
                                     <div class="order-date">
@@ -505,12 +475,12 @@ try {
                                 </div>
                                 <div class="order-actions">
                                     <a href="shop.php" class="btn btn-sm btn-secondary">Buy Again</a>
-                                    <?php if ($order['status'] !== 'delivered' && $order['status'] !== 'cancelled'): ?>
+                                    <?php if ($order['status'] === 'pending'): ?>
                                     <a href="orders.php?cancel_order_id=<?= $order['order_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this order?');">
                                         <i class="fas fa-times-circle"></i> Cancel Order
                                     </a>
-                                    <?php elseif ($order['status'] === 'cancelled'): ?>
-                                    <a href="orders.php?delete_order_id=<?= $order['order_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to permanently delete this cancelled order?');">
+                                    <?php elseif ($order['status'] === 'cancelled' || $order['status'] === 'completed'): ?>
+                                    <a href="orders.php?delete_order_id=<?= $order['order_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to permanently delete this order?');">
                                         <i class="fas fa-trash"></i> Delete
                                     </a>
                                     <?php endif; ?>
@@ -526,10 +496,18 @@ try {
                                         <strong>Edit Shipping Address:</strong>
                                     </div>
                                     <div class="form-row" style="display:flex;gap:10px;flex-wrap:wrap;">
-                                        <input type="text" name="address" value="<?= htmlspecialchars($order['address']) ?>" placeholder="Address" required style="flex:2;">
-                                        <input type="text" name="city" value="<?= htmlspecialchars($order['city']) ?>" placeholder="City" required style="flex:1;">
-                                        <input type="text" name="zip" value="<?= htmlspecialchars($order['zip']) ?>" placeholder="ZIP" required style="flex:1;">
-                                        <input type="text" name="country" value="<?= htmlspecialchars($order['country']) ?>" placeholder="Country" required style="flex:1;">
+                                        <input type="text" name="address"
+                                            value="<?= htmlspecialchars($order['address'] ?? '') ?>"
+                                            placeholder="Address" required style="flex:2;">
+                                        <input type="text" name="city"
+                                            value="<?= htmlspecialchars($order['city'] ?? '') ?>"
+                                            placeholder="City" required style="flex:1;">
+                                        <input type="text" name="zip"
+                                            value="<?= htmlspecialchars($order['zip'] ?? '') ?>"
+                                            placeholder="ZIP" required style="flex:1;">
+                                        <input type="text" name="country"
+                                            value="<?= htmlspecialchars($order['country'] ?? '') ?>"
+                                            placeholder="Country" required style="flex:1;">
                                     </div>
                                     <div style="margin-top:10px;">
                                         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Address</button>

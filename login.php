@@ -1,7 +1,8 @@
 <?php
 session_start();
+require_once 'database.php';
+
 if (isset($_SESSION['user'])) {
-    // Redirect admin users to admin dashboard, regular users to homepage
     if (isset($_SESSION['user']['account_type']) && $_SESSION['user']['account_type'] == 1) {
         header('Location: admin/admin_index.php');
     } else {
@@ -10,70 +11,41 @@ if (isset($_SESSION['user'])) {
     exit;
 }
 
-// Include autoloader
-require_once 'includes/autoload.php';
-
-// Initialize database connection
-$database = new Database();
-$db = $database->connect();
-
-// Initialize user object
-$user = new User($db);
-
 $error = '';
 $success = '';
-$email = ''; // Initialize email variable
+$email = '';
 
-// Check if user just registered successfully
 if (isset($_SESSION['registration_success'])) {
     $success = 'Registration successful! Please log in with your credentials.';
     $email = $_SESSION['registered_email'] ?? '';
-    
-    // Clear the session variables
     unset($_SESSION['registration_success']);
     unset($_SESSION['registered_email']);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate and sanitize input
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
-    
-    // Validation
     $errors = [];
-    
+
     if (empty($email)) {
         $errors[] = 'Email is required';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Invalid email format';
     }
-    
     if (empty($password)) {
         $errors[] = 'Password is required';
     }
-    
-    // If validation passes, proceed with login
+
     if (empty($errors)) {
-        // Try to login
-        if ($user->login($email, $password)) {
-            $_SESSION['user'] = [
-                'user_id' => $user->user_id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'profile_pic' => $user->profile_pic,
-                'account_type' => $user->account_type
-            ];
-            
-            // Mark as new login to trigger cart reset
+        $db = new Database();
+        $userData = $db->loginUser($email, $password);
+        if ($userData) {
+            $_SESSION['user'] = $userData;
             $_SESSION['new_login'] = true;
-            
-            // Redirect admin users to admin dashboard
-            if ($user->account_type == 1) {
+            if ($userData['account_type'] == 1) {
                 header('Location: admin/admin_index.php');
                 exit;
             }
-            
-            // Redirect regular users to saved page or home page
             if (isset($_SESSION['redirect_after_login'])) {
                 $redirect = $_SESSION['redirect_after_login'];
                 unset($_SESSION['redirect_after_login']);
@@ -88,32 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $error = implode('<br>', $errors);
     }
-}
-
-// For testing purposes - can be removed in production
-if (!$error && $email === 'user@example.com' && $password === 'password') {
-    $_SESSION['user'] = [
-        'user_id' => 1,
-        'email' => $email,
-        'name' => 'John Doe',
-        'profile_pic' => 'images/default-profile.png',
-        'account_type' => 0 // Regular user
-    ];
-    header('Location: index.php');
-    exit;
-}
-
-// For testing admin access - can be removed in production
-if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
-    $_SESSION['user'] = [
-        'user_id' => 2,
-        'email' => $email,
-        'name' => 'Admin User',
-        'profile_pic' => 'images/default-profile.png',
-        'account_type' => 1 // Admin user
-    ];
-    header('Location: admin/index.php');
-    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -316,3 +262,5 @@ if (!$error && $email === 'admin@example.com' && $password === 'admin123') {
     </script>
 </body>
 </html>
+                
+    

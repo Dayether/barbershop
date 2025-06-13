@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 // Check if booking reference is provided
 if (!isset($_GET['ref'])) {
@@ -11,21 +11,15 @@ if (!isset($_GET['ref'])) {
 $bookingReference = $_GET['ref'];
 $appointmentDetails = null;
 
-// Get appointment details from the database
 try {
-    $stmt = $conn->prepare("SELECT a.*, b.name AS barber_name FROM appointments a LEFT JOIN barbers b ON a.barber_id = b.barber_id WHERE a.booking_reference = ?");
-    $stmt->bind_param("s", $bookingReference);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        $appointmentDetails = $result->fetch_assoc();
-    } else {
+    $db = new Database();
+    $appointmentDetails = $db->getAppointmentDetailsByReference($bookingReference);
+
+    if (!$appointmentDetails) {
         header('Location: index.php');
         exit;
     }
 } catch (Exception $e) {
-    // Handle database error
     $_SESSION['error'] = "Could not retrieve appointment details.";
     header('Location: index.php');
     exit;
@@ -192,6 +186,12 @@ try {
                             instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
                         }]
                     ]
+                });
+            }, 6000);
+        });
+    </script>
+</body>
+</html>
                 });
             }, 6000);
         });

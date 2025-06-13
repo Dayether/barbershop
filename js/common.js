@@ -266,157 +266,80 @@ function updateCartItems(cart) {
     
     console.log("Updating cart UI with", cart.length, "items");
     
-    if (cart.length === 0) {
-        // Empty cart
-        cartItems.innerHTML = `
-            <div class="empty-cart">
-                <i class="fas fa-shopping-bag"></i>
-                <p>Your cart is empty</p>
-                <a href="shop.php" class="btn btn-secondary btn-sm">Start Shopping</a>
+    // Clear cartItems container before appending
+    cartItems.innerHTML = '';
+
+    let total = 0;
+
+    cart.forEach((item, index) => {
+        const cartItemElement = document.createElement('div');
+        cartItemElement.className = 'cart-item';
+        cartItemElement.innerHTML = `
+            <div class="cart-item-image">
+                <img src="${item.image}" alt="${item.name}">
+            </div>
+            <div class="cart-item-details">
+                <h4>${item.name}</h4>
+                <div class="cart-item-meta">
+                    <span class="cart-item-price">$${item.price.toFixed(2)}</span>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn decrease-qty" data-index="${index}">-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="quantity-btn increase-qty" data-index="${index}">+</button>
+                    </div>
+                </div>
+                <button class="remove-item" data-index="${index}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
         `;
-        cartTotal.textContent = '$0.00';
-        
-        // Disable checkout button
-        if (checkoutBtn) {
-            checkoutBtn.classList.add('disabled');
-            checkoutBtn.setAttribute('href', 'javascript:void(0);');
-            checkoutBtn.setAttribute('onclick', "alert('Your cart is empty!'); return false;");
-            console.log("Checkout button disabled");
-        }
-    } else {
-        // Cart has items
-        let total = 0;
-        cartItems.innerHTML = '';
-        
-        cart.forEach((item, index) => {
-            const itemTotal = item.price * item.quantity;
-            total += itemTotal;
-            
-            console.log(`Adding item to cart display: ${item.name} x${item.quantity}`);
-            
-            const cartItemElement = document.createElement('div');
-            cartItemElement.className = 'cart-item';
-            cartItemElement.innerHTML = `
-                <div class="cart-item-image">
-                    <img src="${item.image}" alt="${item.name}">
-                </div>
-                <div class="cart-item-details">
-                    <h4>${item.name}</h4>
-                    <div class="cart-item-meta">
-                        <span class="cart-item-price">$${item.price.toFixed(2)}</span>
-                        <div class="cart-item-quantity">
-                            <button class="quantity-btn decrease-qty" data-index="${index}">-</button>
-                            <span class="quantity">${item.quantity}</span>
-                            <button class="quantity-btn increase-qty" data-index="${index}">+</button>
-                        </div>
-                    </div>
-                    <button class="remove-item" data-index="${index}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            `;
-            
-            cartItems.appendChild(cartItemElement);
-        });
-        
-        // Update total price
-        cartTotal.textContent = '$' + total.toFixed(2);
-        
-        // Enable checkout button - this is critical
-        if (checkoutBtn) {
-            checkoutBtn.classList.remove('disabled');
-            checkoutBtn.removeAttribute('onclick');
-            checkoutBtn.setAttribute('href', 'payment.php');
-            
-            // Make sure the button is clickable
-            checkoutBtn.style.pointerEvents = 'auto';
-            checkoutBtn.style.opacity = '1';
-            console.log("Checkout button enabled");
-            
-            // Update cart in sessionStorage when clicking checkout
-            checkoutBtn.addEventListener('click', function(e) {
-                // Don't add event listener more than once
-                if (this.getAttribute('data-event-added')) return;
-                
-                this.setAttribute('data-event-added', 'true');
-                
-                // Store cart data in sessionStorage for checkout page
-                sessionStorage.setItem('cart', JSON.stringify(cart));
-                console.log("Cart data stored in sessionStorage for checkout");
-            });
-        }
-        
-        // Add quantity adjustment event listeners
-        addQuantityButtonListeners(cart);
-    }
-}
+        cartItems.appendChild(cartItemElement);
 
-// Add event listeners to quantity buttons
-function addQuantityButtonListeners(cart) {
-    // Decrease quantity buttons
-    document.querySelectorAll('.decrease-qty').forEach(button => {
-        button.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
-            if (cart[index].quantity > 1) {
-                cart[index].quantity--;
-                saveAndUpdateCart(cart);
-            } else {
-                removeCartItem(index, cart);
+        total += item.price * item.quantity;
+    });
+
+    // Update total price
+    cartTotal.textContent = '$' + total.toFixed(2);
+
+    // Enable checkout button - this is critical
+    if (checkoutBtn) {
+        checkoutBtn.classList.remove('disabled');
+        checkoutBtn.removeAttribute('onclick');
+        checkoutBtn.setAttribute('href', 'payment.php');
+        checkoutBtn.style.pointerEvents = 'auto';
+        checkoutBtn.style.opacity = '1';
+        console.log("Checkout button enabled");
+    }
+
+    // Add event listeners for quantity and remove buttons
+    cartItems.querySelectorAll('.increase-qty').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            cart[idx].quantity += 1;
+            updateCart(cart);
+        };
+    });
+    cartItems.querySelectorAll('.decrease-qty').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            if (cart[idx].quantity > 1) {
+                cart[idx].quantity -= 1;
+                updateCart(cart);
             }
-        });
+        };
     });
-    
-    // Increase quantity buttons
-    document.querySelectorAll('.increase-qty').forEach(button => {
-        button.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
-            cart[index].quantity++;
-            saveAndUpdateCart(cart);
-        });
-    });
-    
-    // Remove item buttons
-    document.querySelectorAll('.remove-item').forEach(button => {
-        button.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
-            removeCartItem(index, cart);
-        });
+    cartItems.querySelectorAll('.remove-item').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            cart.splice(idx, 1);
+            updateCart(cart);
+        };
     });
 }
 
-// Remove an item from the cart
-function removeCartItem(index, cart) {
-    console.log("Removing item at index", index);
-    
-    // Get the item element
-    const button = document.querySelector(`.remove-item[data-index="${index}"]`);
-    if (button) {
-        const cartItem = button.closest('.cart-item');
-        if (cartItem) {
-            // Apply removal animation
-            cartItem.classList.add('removing');
-            
-            setTimeout(() => {
-                // Remove item from cart array
-                cart.splice(index, 1);
-                saveAndUpdateCart(cart);
-            }, 300);
-        } else {
-            // No animation, just remove immediately
-            cart.splice(index, 1);
-            saveAndUpdateCart(cart);
-        }
-    } else {
-        // Button not found, just remove immediately
-        cart.splice(index, 1);
-        saveAndUpdateCart(cart);
-    }
-}
-
-// Save cart and update UI
-function saveAndUpdateCart(cart) {
-    console.log("Saving cart and updating UI");
+// Update cart UI and save to storage
+function updateCart(cart) {
+    console.log("Updating cart in storage and UI");
     localStorage.setItem('cart', JSON.stringify(cart));
     sessionStorage.setItem('cart', JSON.stringify(cart)); // For checkout consistency
     updateCartCount(cart);
@@ -457,30 +380,107 @@ document.addEventListener('DOMContentLoaded', function() {
     fixCheckoutButtonState();
 });
 
-// Function to fix checkout button state based on cart
-function fixCheckoutButtonState() {
+// Ensure cart is global and loaded from sessionStorage
+window.cart = [];
+try {
+    const storedCart = sessionStorage.getItem('cart');
+    if (storedCart) {
+        window.cart = JSON.parse(storedCart);
+    }
+} catch (e) {
+    window.cart = [];
+}
+
+// Update cart and persist to sessionStorage
+function updateCart(cart) {
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+    updateCartItems(cart);
+}
+
+// Render cart items and attach event listeners
+function updateCartItems(cart) {
+    const cartItems = document.getElementById('cart-items');
+    const cartTotal = document.getElementById('cart-total');
     const checkoutBtn = document.getElementById('checkout-btn');
-    if (!checkoutBtn) return;
     
-    // Get current cart
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (!cartItems || !cartTotal) return;
     
-    if (cart.length > 0) {
-        // If cart has items, ensure checkout button is enabled
+    // Clear cartItems container before appending
+    cartItems.innerHTML = '';
+
+    let total = 0;
+
+    cart.forEach((item, index) => {
+        const cartItemElement = document.createElement('div');
+        cartItemElement.className = 'cart-item';
+        cartItemElement.innerHTML = `
+            <div class="cart-item-image">
+                <img src="${item.image}" alt="${item.name}">
+            </div>
+            <div class="cart-item-details">
+                <h4>${item.name}</h4>
+                <div class="cart-item-meta">
+                    <span class="cart-item-price">$${item.price.toFixed(2)}</span>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn decrease-qty" data-index="${index}">-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="quantity-btn increase-qty" data-index="${index}">+</button>
+                    </div>
+                </div>
+                <button class="remove-item" data-index="${index}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+        cartItems.appendChild(cartItemElement);
+
+        total += item.price * item.quantity;
+    });
+
+    // Update total price
+    cartTotal.textContent = '$' + total.toFixed(2);
+
+    // Enable checkout button - this is critical
+    if (checkoutBtn) {
         checkoutBtn.classList.remove('disabled');
         checkoutBtn.removeAttribute('onclick');
         checkoutBtn.setAttribute('href', 'payment.php');
         checkoutBtn.style.pointerEvents = 'auto';
         checkoutBtn.style.opacity = '1';
-        console.log("Fixed checkout button state - enabled");
-    } else {
-        // If cart is empty, button should be disabled
-        checkoutBtn.classList.add('disabled');
-        checkoutBtn.setAttribute('href', 'javascript:void(0);');
-        checkoutBtn.setAttribute('onclick', "alert('Your cart is empty!'); return false;");
-        console.log("Fixed checkout button state - disabled");
+        console.log("Checkout button enabled");
     }
+
+    // Add event listeners for quantity and remove buttons
+    cartItems.querySelectorAll('.increase-qty').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            cart[idx].quantity += 1;
+            updateCart(cart);
+        };
+    });
+    cartItems.querySelectorAll('.decrease-qty').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            if (cart[idx].quantity > 1) {
+                cart[idx].quantity -= 1;
+                updateCart(cart);
+            }
+        };
+    });
+    cartItems.querySelectorAll('.remove-item').forEach(btn => {
+        btn.onclick = function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            cart.splice(idx, 1);
+            updateCart(cart);
+        };
+    });
 }
+
+// On page load, render cart
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartItems(window.cart);
+});
+
 
 // Make updateCartCount available globally even when full cart functionality isn't initialized
 function updateCartCount() {

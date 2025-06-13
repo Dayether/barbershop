@@ -1,7 +1,6 @@
 <?php
 session_start();
-// Include database connection
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 // Initialize variables
 $name = $email = $phone = $subject = $message = "";
@@ -12,91 +11,76 @@ $formError = false;
 // Process form when submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $formSubmitted = true;
-    
+
     // Validate name
     if (empty($_POST["name"])) {
         $nameErr = "Name is required";
         $formError = true;
     } else {
-        $name = test_input($_POST["name"]);
-        // Check if name only contains letters and whitespace
+        $name = Database::test_input($_POST["name"]);
         if (!preg_match("/^[a-zA-Z ]*$/",$name)) {
             $nameErr = "Only letters and white space allowed";
             $formError = true;
         }
     }
-    
+
     // Validate email
     if (empty($_POST["email"])) {
         $emailErr = "Email is required";
         $formError = true;
     } else {
-        $email = test_input($_POST["email"]);
-        // Check if email is valid
+        $email = Database::test_input($_POST["email"]);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $emailErr = "Invalid email format";
             $formError = true;
         }
     }
-    
+
     // Validate phone
     if (empty($_POST["phone"])) {
         $phoneErr = "Phone number is required";
         $formError = true;
     } else {
-        $phone = test_input($_POST["phone"]);
-        // Check if phone number format is valid
+        $phone = Database::test_input($_POST["phone"]);
         if (!preg_match("/^[0-9\-\(\)\/\+\s]*$/",$phone)) {
             $phoneErr = "Invalid phone number format";
             $formError = true;
         }
     }
-    
+
     // Validate subject
     if (empty($_POST["subject"])) {
         $subjectErr = "Subject is required";
         $formError = true;
     } else {
-        $subject = test_input($_POST["subject"]);
+        $subject = Database::test_input($_POST["subject"]);
     }
-    
+
     // Validate message
     if (empty($_POST["message"])) {
         $messageErr = "Message is required";
         $formError = true;
     } else {
-        $message = test_input($_POST["message"]);
+        $message = Database::test_input($_POST["message"]);
     }
-    
+
     // If no errors, insert into database
     if (!$formError) {
-        $status = "new"; // Default status for new messages
-        
-        $sql = "INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW())";
-                
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssss", $name, $email, $phone, $subject, $message, $status);
-        
-        if ($stmt->execute()) {
-            // Clear form fields after successful submission
-            $name = $email = $phone = $subject = $message = "";
-            $successMessage = "Your message has been sent successfully! We will contact you soon.";
-        } else {
-            $errorMessage = "Error: " . $stmt->error;
+        try {
+            $db = new Database();
+            $result = $db->insertContactMessage($name, $email, $phone, $subject, $message);
+            if ($result['success']) {
+                $name = $email = $phone = $subject = $message = "";
+                $successMessage = "Your message has been sent successfully! We will contact you soon.";
+            } else {
+                $errorMessage = "Error: " . $result['error'];
+                $formError = true;
+            }
+        } catch (Exception $e) {
+            $errorMessage = "Error: " . $e->getMessage();
             $formError = true;
         }
-        
-        $stmt->close();
     }
-}
-
-// Function to sanitize input data
-function test_input($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
 }
 ?>
 
@@ -526,6 +510,10 @@ function test_input($data) {
                 });
             }
         });
+    </script>
+</body>
+</html>
+                       
     </script>
 </body>
 </html>

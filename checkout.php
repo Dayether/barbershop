@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 // Check if cart exists and has items
 if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
@@ -19,12 +19,11 @@ foreach ($_SESSION['cart'] as $item) {
 // Get user data if logged in
 $user_data = [];
 if (isset($_SESSION['user'])) {
-    $stmt = $conn->prepare("SELECT first_name, last_name, email, phone, address, city, zip, country FROM users WHERE user_id = ?");
-    $stmt->bind_param("i", $_SESSION['user']['user_id']);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $user_data = $result->fetch_assoc();
+    try {
+        $db = new Database();
+        $user_data = $db->getUserCheckoutData($_SESSION['user']['user_id']);
+    } catch (Exception $e) {
+        $user_data = [];
     }
 }
 ?>

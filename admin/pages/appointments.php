@@ -1,217 +1,87 @@
 <?php
-// Include Appointment model
-require_once 'models/Appointment.php';
-require_once 'includes/notifications.php';
+require_once '../database.php';
+$db = new Database();
 
-// Database connection
-$db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Instantiate Appointment object
-$appointmentObj = new Appointment($db);
-
-// Set default view mode to list
 $viewMode = 'list';
 $appointment = null;
+$services = [];
+$barbers = [];
+$appointments = [];
+$history = [];
+$errorMsg = '';
+$successMsg = '';
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
+$page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+$perPage = 10;
 
-// Check if edit mode is requested
+// Edit mode
 if (isset($_GET['edit'])) {
     $viewMode = 'edit';
-    $id = $_GET['edit'];
-
-    // Get appointment details using the model
-    $appointmentObj->id = $id;
-    if ($appointmentObj->readSingle()) {
-        // Populate $appointment array for the form
-        $appointment = [
-            'id' => $appointmentObj->id,
-            'booking_reference' => $appointmentObj->booking_reference,
-            'user_id' => $appointmentObj->user_id,
-            'service' => $appointmentObj->service_id ?? $appointmentObj->service ?? '',
-            'service_id' => $appointmentObj->service_id ?? $appointmentObj->service ?? '',
-            'appointment_date' => $appointmentObj->appointment_date,
-            'appointment_time' => $appointmentObj->appointment_time,
-            'barber' => $appointmentObj->barber_id ?? $appointmentObj->barber ?? '',
-            'barber_id' => $appointmentObj->barber_id ?? $appointmentObj->barber ?? '',
-            'client_name' => $appointmentObj->client_name,
-            'client_email' => $appointmentObj->client_email,
-            'client_phone' => $appointmentObj->client_phone,
-            'notes' => $appointmentObj->notes,
-            'status' => $appointmentObj->status,
-            'created_at' => $appointmentObj->created_at
-        ];
-    } else {
-        setErrorToast("Appointment not found.");
+    $id = (int)$_GET['edit'];
+    $appointment = $db->getAppointmentById($id);
+    if (!$appointment) {
+        $errorMsg = "Appointment not found.";
         $viewMode = 'list';
+    } else {
+        $services = $db->getUniqueActiveServices();
+        $barbers = $db->getActiveBarbers();
+        $history = $db->getAppointmentHistory($id);
     }
-}
-
-// Get services and barbers for dropdown menus (used in edit mode)
-if ($viewMode === 'edit') {
-    try {
-        $stmt = $db->query("SELECT service_id, name FROM services WHERE active = 1 ORDER BY service_id ASC");
-        $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $stmt = $db->query("SELECT barber_id, name FROM barbers WHERE active = 1 ORDER BY barber_id ASC");
-        $barbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $services = [];
-        $barbers = [];
-    }
-}
-
-// Get status filter
-$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
-if (is_array($statusFilter)) {
-    $statusFilter = isset($statusFilter[0]) ? $statusFilter[0] : '';
 }
 
 // Handle edit form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_appointment'])) {
-    try {
-        $appointmentObj->id = $_POST['appointment_id'];
-        $appointmentObj->service_id = $_POST['service'];
-        $appointmentObj->appointment_date = $_POST['appointment_date'];
-        $appointmentObj->appointment_time = $_POST['appointment_time'];
-        $appointmentObj->barber_id = $_POST['barber'];
-        $appointmentObj->client_name = $_POST['client_name'];
-        $appointmentObj->client_email = $_POST['client_email'];
-        $appointmentObj->client_phone = $_POST['client_phone'];
-        $appointmentObj->notes = $_POST['notes'];
-        $appointmentObj->status = $_POST['status'];
-
-        // Call update method (ensure Appointment model uses these properties)
-        if ($appointmentObj->update()) {
-            setSuccessToast("Appointment updated successfully!");
-            // Refresh the $appointment array so the form shows updated values
-            $appointmentObj->readSingle();
-            $appointment = [
-                'id' => $appointmentObj->id,
-                'booking_reference' => $appointmentObj->booking_reference,
-                'user_id' => $appointmentObj->user_id,
-                'service' => $appointmentObj->service_id,
-                'service_id' => $appointmentObj->service_id,
-                'appointment_date' => $appointmentObj->appointment_date,
-                'appointment_time' => $appointmentObj->appointment_time,
-                'barber' => $appointmentObj->barber_id,
-                'barber_id' => $appointmentObj->barber_id,
-                'client_name' => $appointmentObj->client_name,
-                'client_email' => $appointmentObj->client_email,
-                'client_phone' => $appointmentObj->client_phone,
-                'notes' => $appointmentObj->notes,
-                'status' => $appointmentObj->status,
-                'created_at' => $appointmentObj->created_at
-            ];
-        } else {
-            setErrorToast("Failed to update appointment.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $updateData = [
+        'appointment_id' => $_POST['appointment_id'],
+        'service_id' => $_POST['service'],
+        'appointment_date' => $_POST['appointment_date'],
+        'appointment_time' => $_POST['appointment_time'],
+        'barber_id' => $_POST['barber'],
+        'client_name' => $_POST['client_name'],
+        'client_email' => $_POST['client_email'],
+        'client_phone' => $_POST['client_phone'],
+        'notes' => $_POST['notes'],
+        'status' => $_POST['status']
+    ];
+    $result = $db->updateAppointment($updateData);
+    if ($result['success']) {
+        $successMsg = "Appointment updated successfully!";
+        $appointment = $db->getAppointmentById($updateData['appointment_id']);
+        $history = $db->getAppointmentHistory($updateData['appointment_id']);
+    } else {
+        $errorMsg = $result['error_message'];
     }
 }
 
 // Handle status update from list view
 if (isset($_POST['update_status']) && !isset($_POST['update_appointment'])) {
-    try {
-        $appointmentObj->id = $_POST['appointment_id'];
-        $appointmentObj->status = $_POST['status'];
-        
-        // Update the status using model
-        if ($appointmentObj->updateStatus()) {
-            // Add to appointment history
-            $notes = "Status changed to " . ucfirst($appointmentObj->status) . " by admin";
-            $staffId = $_SESSION['user']['id'];
-            $appointmentObj->addHistory($appointmentObj->status, $notes, null, $staffId);
-            
-            setSuccessToast("Status updated to " . ucfirst($appointmentObj->status));
-        } else {
-            setErrorToast("Failed to update status.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
-    }
-}
-
-// Delete appointment - Remove the old confirmation code
-if (isset($_GET['delete']) && !isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-    // We'll handle this with IziToast instead of the old JavaScript confirm
-    // The actual deletion will still happen when confirm_delete is set
-}
-
-// Process confirmed deletion
-if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-    
-    try {
-        // Get appointment details first for the record
-        $appointmentObj->id = $id;
-        $appointmentObj->readSingle();
-        $refNumber = $appointmentObj->booking_reference;
-        
-        // Delete the appointment using model
-        if ($appointmentObj->delete()) {
-            setSuccessToast("Appointment #$refNumber deleted successfully!");
-        } else {
-            setErrorToast("Failed to delete appointment.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
-    }
-}
-
-// Pagination for list view
-if ($viewMode === 'list') {
-    $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-    $perPage = 10;
-
-    // Get total count using model
-    if (!empty($statusFilter)) {
-        // This would need a new method in the model for filtered count
-        try {
-            $countQuery = "SELECT COUNT(*) as total FROM appointments WHERE status = :status";
-            $stmt = $db->prepare($countQuery);
-            $stmt->bindParam(':status', $statusFilter, PDO::PARAM_STR);
-            $stmt->execute();
-            $totalAppointments = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-        } catch (PDOException $e) {
-            $totalAppointments = 0;
-        }
+    $result = $db->updateAppointmentStatus($_POST['appointment_id'], $_POST['status']);
+    if ($result['success']) {
+        $successMsg = "Status updated to " . ucfirst($_POST['status']);
     } else {
-        if (!isset($appointments) || !is_array($appointments)) {
-            $appointments = [];
-        }
-        $totalAppointments = count($appointments);
+        $errorMsg = $result['error_message'];
     }
+}
 
+// Handle delete
+if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
+    $id = (int)$_GET['delete'];
+    $result = $db->deleteAppointment($id);
+    if ($result['success']) {
+        $successMsg = "Appointment deleted successfully!";
+    } else {
+        $errorMsg = $result['error_message'];
+    }
+}
+
+// Pagination and list view
+if ($viewMode === 'list') {
+    $totalAppointments = $db->countAppointments($statusFilter);
     $totalPages = ceil($totalAppointments / $perPage);
-
-    // Get appointments for current page
-    // FIX: Use correct user_id column in join (users.user_id)
     $offset = ($page - 1) * $perPage;
-    try {
-        $query = "SELECT a.*, u.name as user_name FROM appointments a 
-                LEFT JOIN users u ON a.user_id = u.user_id";
-        if (!empty($statusFilter)) {
-            $query .= " WHERE a.status = :status";
-        }
-        $query .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT :limit OFFSET :offset";
-
-        $stmt = $db->prepare($query);
-
-        if (!empty($statusFilter)) {
-            $stmt->bindParam(':status', $statusFilter, PDO::PARAM_STR);
-        }
-        $stmt->bindParam(':limit', $perPage, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-
-        $stmt->execute();
-        $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $errorMsg = "Database error: " . $e->getMessage();
-        $appointments = [];
-        $totalPages = 0;
-    }
+    $appointments = $db->getAppointments($statusFilter, $perPage, $offset);
+    $barberMap = $db->getBarberMap();
+    $serviceMap = $db->getServiceMap();
 }
 ?>
 
@@ -226,7 +96,7 @@ if ($viewMode === 'list') {
     </div>
     <div class="admin-card-body">
         <form method="post" class="admin-form">
-            <input type="hidden" name="appointment_id" value="<?php echo htmlspecialchars($appointment['id']); ?>">
+            <input type="hidden" name="appointment_id" value="<?php echo htmlspecialchars($appointment['appointment_id']); ?>">
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -351,6 +221,28 @@ if ($viewMode === 'list') {
     </div>
 </div>
 
+<!-- Add iziToast notification for edit mode feedback -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if (!empty($successMsg)): ?>
+        iziToast.success({
+            title: 'Success',
+            message: '<?php echo addslashes($successMsg); ?>',
+            position: 'topRight',
+            icon: 'fas fa-check-circle'
+        });
+    <?php endif; ?>
+    <?php if (!empty($errorMsg)): ?>
+        iziToast.error({
+            title: 'Error',
+            message: '<?php echo addslashes($errorMsg); ?>',
+            position: 'topRight',
+            icon: 'fas fa-exclamation-circle'
+        });
+    <?php endif; ?>
+});
+</script>
 <?php else: ?>
 <!-- LIST MODE -->
 <div class="admin-card">
@@ -365,11 +257,11 @@ if ($viewMode === 'list') {
         </div>
     </div>
     <div class="admin-card-body">
-        <?php if (isset($successMsg)): ?>
+        <?php if (!empty($successMsg)): ?>
             <div class="alert alert-success"><?php echo $successMsg; ?></div>
         <?php endif; ?>
         
-        <?php if (isset($errorMsg)): ?>
+        <?php if (!empty($errorMsg)): ?>
             <div class="alert alert-danger"><?php echo $errorMsg; ?></div>
         <?php endif; ?>
         
@@ -390,25 +282,9 @@ if ($viewMode === 'list') {
                     <?php if (count($appointments) > 0): ?>
                         <?php
                         // Build barber id=>name map
-                        $barberMap = [];
-                        try {
-                            $stmt = $db->query("SELECT barber_id, name FROM barbers");
-                            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $barber) {
-                                $barberMap[$barber['barber_id']] = $barber['name'];
-                            }
-                        } catch (Exception $e) {
-                            $barberMap = [];
-                        }
+                        $barberMap = $db->getBarberMap(); // Implement in Database.php (returns [barber_id => name])
                         // Build service id=>name map
-                        $serviceMap = [];
-                        try {
-                            $stmt = $db->query("SELECT service_id, name FROM services");
-                            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $service) {
-                                $serviceMap[$service['service_id']] = $service['name'];
-                            }
-                        } catch (Exception $e) {
-                            $serviceMap = [];
-                        }
+                        $serviceMap = $db->getServiceMap(); // Implement in Database.php (returns [service_id => name])
                         ?>
                         <?php foreach ($appointments as $appointment): ?>
                             <tr>
@@ -417,7 +293,15 @@ if ($viewMode === 'list') {
                                 </td>
                                 <td>
                                     <div class="client-info">
-                                        <strong><?php echo htmlspecialchars($appointment['client_name'] ?? ''); ?></strong>
+                                        <strong>
+                                            <?php
+                                            if (!empty($appointment['first_name']) && !empty($appointment['last_name'])) {
+                                                echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name']);
+                                            } else {
+                                                echo htmlspecialchars($appointment['client_name'] ?? '');
+                                            }
+                                            ?>
+                                        </strong>
                                         <span class="email"><?php echo htmlspecialchars($appointment['client_email'] ?? ''); ?></span>
                                     </div>
                                 </td>
@@ -540,6 +424,29 @@ if ($viewMode === 'list') {
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Add iziToast notification for delete feedback in list mode -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if (!empty($successMsg)): ?>
+        iziToast.success({
+            title: 'Success',
+            message: '<?php echo addslashes($successMsg); ?>',
+            position: 'topRight',
+            icon: 'fas fa-check-circle'
+        });
+    <?php endif; ?>
+    <?php if (!empty($errorMsg)): ?>
+        iziToast.error({
+            title: 'Error',
+            message: '<?php echo addslashes($errorMsg); ?>',
+            position: 'topRight',
+            icon: 'fas fa-exclamation-circle'
+        });
+    <?php endif; ?>
+});
+</script>
 <?php endif; ?>
 
 <style>
@@ -942,3 +849,108 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+// Status dropdown functionality
+function toggleStatusDropdown(id) {
+    // Close all other dropdowns first
+    document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+        if (dropdown.id !== 'status-dropdown-' + id) {
+            dropdown.classList.remove('show');
+        }
+    });
+    
+    // Toggle the clicked dropdown
+    const dropdown = document.getElementById('status-dropdown-' + id);
+    dropdown.classList.toggle('show');
+    
+    // Toggle active class on badge
+    const badge = dropdown.previousElementSibling;
+    badge.classList.toggle('active');
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function closeDropdown(e) {
+        if (!e.target.closest('.status-form')) {
+            dropdown.classList.remove('show');
+            badge.classList.remove('active');
+            document.removeEventListener('click', closeDropdown);
+        }
+    });
+}
+
+// Update status function
+function updateStatus(id, status) {
+    // Update hidden input value
+    document.getElementById('status-input-' + id).value = status;
+    
+    // Update badge text and class
+    const badge = document.querySelector('#status-form-' + id + ' .status-badge');
+    badge.className = 'status-badge status-' + status;
+    badge.querySelector('.status-text').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    
+    // Hide dropdown
+    document.getElementById('status-dropdown-' + id).classList.remove('show');
+    
+    // Show loading state
+    badge.innerHTML = '<span class="status-text"><i class="fas fa-spinner fa-spin"></i> Updating...</span>';
+    
+    // Submit the form
+    document.getElementById('status-form-' + id).submit();
+}
+
+// Add IziToast confirmation for delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Target all delete buttons
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const deleteUrl = this.getAttribute('href');
+            
+            iziToast.question({
+                timeout: false,
+                close: false,
+                overlay: true,
+                displayMode: 'once',
+                id: 'question',
+                zindex: 999,
+                title: 'Confirm Deletion',
+                message: 'Are you sure you want to delete this record? This action cannot be undone.',
+                position: 'center',
+                buttons: [
+                    ['<button><b>Yes, Delete</b></button>', function (instance, toast) {
+                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        window.location.href = deleteUrl + '&confirm_delete=1';
+                    }, true],
+                    ['<button>Cancel</button>', function (instance, toast) {
+                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                    }]
+                ],
+                onClosing: function(instance, toast, closedBy){
+                    console.log('Closing | closedBy: ' + closedBy);
+                },
+                onClosed: function(instance, toast, closedBy){
+                    console.log('Closed | closedBy: ' + closedBy);
+                }
+            });
+        });
+    });
+});
+
+// Close any open dropdowns when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.status-form')) {
+            document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            document.querySelectorAll('.status-badge').forEach(badge => {
+                badge.classList.remove('active');
+            });
+        }
+    });
+});
+</script>
+

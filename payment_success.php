@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'database.php';
 
 // Get the order reference if provided
 $orderRef = isset($_GET['order_ref']) ? htmlspecialchars($_GET['order_ref']) : 'Unknown';

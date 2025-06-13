@@ -294,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
+                // Use global cart and updateCart
                 updateCart(cart);
                 
                 // Update button

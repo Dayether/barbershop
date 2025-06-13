@@ -33,7 +33,16 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="user-dropdown">
                         <button class="user-dropdown-toggle" id="userDropdownBtn">
                             <img src="<?= htmlspecialchars($_SESSION['user']['profile_pic'] ?? 'images/default-profile.png') ?>" alt="Profile" class="profile-pic">
-                            <span><?= htmlspecialchars($_SESSION['user']['name']) ?></span>
+                            <span>
+                                <?php 
+                                // Display full name or default to 'Guest'
+                                if (isset($_SESSION['user']['first_name']) && isset($_SESSION['user']['last_name'])) {
+                                    echo htmlspecialchars($_SESSION['user']['first_name'] . ' ' . $_SESSION['user']['last_name']);
+                                } else {
+                                    echo 'Guest';
+                                }
+                                ?>
+                            </span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="user-dropdown-menu" id="userDropdownMenu">

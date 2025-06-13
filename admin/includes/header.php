@@ -56,7 +56,18 @@
                         <img src="<?php echo !empty($_SESSION['user']['profile_pic']) ? '../' . $_SESSION['user']['profile_pic'] : '../uploads/default-profile.jpg'; ?>" alt="Admin" class="admin-avatar">
                         <div class="admin-user-details">
                             <span>Welcome</span>
-                            <h4><?php echo $_SESSION['user']['name']; ?></h4>
+                            <h4>
+                            <?php
+                            $user = isset($_SESSION['user']) ? $_SESSION['user'] : [];
+                            if (!empty($user['name'])) {
+                                echo htmlspecialchars($user['name']);
+                            } elseif (!empty($user['first_name']) || !empty($user['last_name'])) {
+                                echo htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
+                            } else {
+                                echo 'Admin';
+                            }
+                            ?>
+                            </h4>
                         </div>
                         <div class="admin-dropdown">
                             <i class="fas fa-chevron-down"></i>

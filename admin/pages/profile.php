@@ -1,377 +1,79 @@
 <?php
-/**
- * Admin Profile Page
- * Uses OOP and PDO for database operations
- */
-
-// Output buffering is now handled in admin_index.php
-// Do not use ob_start() here again
-
-class UserProfile {
-    private $db;
-    private $user_id;
-    private $errors = [];
-    private $user;
-
-    /**
-     * Constructor - initialize database connection and user ID
-     */
-    public function __construct($user_id) {
-        try {
-            $this->db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '', [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-            ]);
-        } catch (PDOException $e) {
-            die("Database connection failed: " . $e->getMessage());
-        }
-        
-        $this->user_id = $user_id;
-        $this->fetchUserData();
-    }
-
-    /**
-     * Get current user data
-     */
-    private function fetchUserData() {
-        try {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE user_id = :user_id");
-            $stmt->bindParam(':user_id', $_SESSION['user']['user_id']);
-            $stmt->execute();
-            $this->user = $stmt->fetch();
-            
-            if (!$this->user) {
-                die("User not found");
-            }
-        } catch (PDOException $e) {
-            die("Error fetching user data: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get user data
-     */
-    public function getUserData() {
-        return $this->user;
-    }
-
-    /**
-     * Update user profile information
-     */
-    public function updateProfile($data) {
-        // Validate data
-        $this->validateProfileData($data);
-        
-        if (!empty($this->errors)) {
-            return false;
-        }
-        
-        try {
-            $stmt = $this->db->prepare("UPDATE users SET name = ?, email = ?, phone = ? WHERE user_id = ?");
-            $result = $stmt->execute([
-                $data['name'], 
-                $data['email'], 
-                $data['phone'] ?? '', 
-                $this->user_id
-            ]);
-            
-            if ($result) {
-                // Update session data
-                $_SESSION['user']['name'] = $data['name'];
-                $_SESSION['user']['email'] = $data['email'];
-                
-                // Set success notification
-                $this->setSuccessMessage('Profile updated successfully!');
-                return true;
-            }
-            
-            $this->errors[] = "Failed to update profile";
-            return false;
-        } catch (PDOException $e) {
-            $this->errors[] = "Database error: " . $e->getMessage();
-            return false;
-        }
-    }
-
-    /**
-     * Validate profile update data
-     */
-    private function validateProfileData($data) {
-        // Name validation
-        if (empty($data['name'])) {
-            $this->errors[] = "Name is required";
-        }
-        
-        // Email validation
-        if (empty($data['email'])) {
-            $this->errors[] = "Email is required";
-        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $this->errors[] = "Invalid email format";
-        } else {
-            // Check if email is already in use by another user
-            try {
-                $stmt = $this->db->prepare("SELECT user_id FROM users WHERE email = ? AND user_id != ?");
-                $stmt->execute([$data['email'], $this->user_id]);
-                if ($stmt->rowCount() > 0) {
-                    $this->errors[] = "Email already in use by another account";
-                }
-            } catch (PDOException $e) {
-                $this->errors[] = "Database error: " . $e->getMessage();
-            }
-        }
-    }
-
-    /**
-     * Upload and update profile picture
-     */
-    public function updateProfilePicture($file) {
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $this->errors[] = "File upload error: " . $this->getUploadErrorMessage($file['error']);
-            return false;
-        }
-        
-        // Directory for profile pictures
-        $uploadDir = '../uploads/profiles/';
-        
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-        
-        // Check file type
-        $fileInfo = getimagesize($file['tmp_name']);
-        if ($fileInfo === false) {
-            $this->errors[] = "Uploaded file is not an image";
-            return false;
-        }
-        
-        // Get file extension and generate new filename
-        $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-        
-        if (!in_array($fileExt, $allowedExt)) {
-            $this->errors[] = "Invalid file format. Allowed formats: jpg, jpeg, png, gif";
-            return false;
-        }
-        
-        // Create unique filename
-        $newFilename = 'profile_' . $this->user_id . '_' . time() . '.' . $fileExt;
-        $uploadPath = $uploadDir . $newFilename;
-        
-        // Move uploaded file
-        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-            $relativeUploadPath = 'uploads/profiles/' . $newFilename;
-            
-            try {
-                $stmt = $this->db->prepare("UPDATE users SET profile_pic = ? WHERE user_id = ?");
-                if ($stmt->execute([$relativeUploadPath, $this->user_id])) {
-                    // Update session data
-                    $_SESSION['user']['profile_pic'] = $relativeUploadPath;
-                    
-                    // Set success notification
-                    $this->setSuccessMessage('Profile picture updated successfully!');
-                    return true;
-                }
-                
-                $this->errors[] = "Failed to update profile picture in database";
-                return false;
-            } catch (PDOException $e) {
-                $this->errors[] = "Database error: " . $e->getMessage();
-                return false;
-            }
-        } else {
-            $this->errors[] = "Failed to move uploaded file";
-            return false;
-        }
-    }
-
-    /**
-     * Get upload error message
-     */
-    private function getUploadErrorMessage($error) {
-        $phpFileUploadErrors = [
-            UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
-            UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE directive specified in the HTML form',
-            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
-            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-            UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder',
-            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-            UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload'
-        ];
-        
-        return isset($phpFileUploadErrors[$error]) ? $phpFileUploadErrors[$error] : 'Unknown upload error';
-    }
-
-    /**
-     * Change user password
-     */
-    public function changePassword($data) {
-        // Validate password data
-        $this->validatePasswordData($data);
-        
-        if (!empty($this->errors)) {
-            return false;
-        }
-        
-        try {
-            // Hash the new password
-            $hashedPassword = password_hash($data['new_password'], PASSWORD_DEFAULT);
-            
-            // Update the password
-            $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-            if ($stmt->execute([$hashedPassword, $this->user_id])) {
-                // Set success notification
-                $this->setSuccessMessage('Password changed successfully!');
-                return true;
-            }
-            
-            $this->errors[] = "Failed to update password";
-            return false;
-        } catch (PDOException $e) {
-            $this->errors[] = "Database error: " . $e->getMessage();
-            return false;
-        }
-    }
-
-    /**
-     * Validate password change data
-     */
-    private function validatePasswordData($data) {
-        // Current password validation
-        if (empty($data['current_password'])) {
-            $this->errors[] = "Current password is required";
-            return;
-        }
-        
-        // Verify current password
-        try {
-            $stmt = $this->db->prepare("SELECT password FROM users WHERE user_id = ?");
-            $stmt->execute([$this->user_id]);
-            $userPass = $stmt->fetchColumn();
-            
-            if (!password_verify($data['current_password'], $userPass)) {
-                $this->errors[] = "Current password is incorrect";
-                return;
-            }
-        } catch (PDOException $e) {
-            $this->errors[] = "Database error: " . $e->getMessage();
-            return;
-        }
-        
-        // New password validation
-        if (empty($data['new_password'])) {
-            $this->errors[] = "New password is required";
-        } elseif (strlen($data['new_password']) < 6) {
-            $this->errors[] = "New password must be at least 6 characters long";
-        }
-        
-        // Password confirmation
-        if ($data['new_password'] !== $data['confirm_password']) {
-            $this->errors[] = "New passwords do not match";
-        }
-    }
-
-    /**
-     * Set success message for toast notification
-     */
-    private function setSuccessMessage($message) {
-        $_SESSION['toast_type'] = 'success';
-        $_SESSION['toast_title'] = 'Success';
-        $_SESSION['toast_message'] = $message;
-    }
-
-    /**
-     * Get validation errors
-     */
-    public function getErrors() {
-        return $this->errors;
-    }
-
-    // Profile picture delete functionality
-    public function deleteProfilePicture() {
-        try {
-            // Get the current profile picture path
-            $currentPic = $this->user['profile_pic'];
-            
-            // Only proceed if there's a custom profile picture
-            if ($currentPic && $currentPic !== 'uploads/default-profile.jpg') {
-                // Delete the file
-                $fullPath = '../' . $currentPic;
-                if (file_exists($fullPath)) {
-                    unlink($fullPath);
-                }
-                
-                // Update the database to set default picture
-                $stmt = $this->db->prepare("UPDATE users SET profile_pic = 'uploads/default-profile.jpg' WHERE user_id = ?");
-                if ($stmt->execute([$this->user_id])) {
-                    // Update session data
-                    $_SESSION['user']['profile_pic'] = 'uploads/default-profile.jpg';
-                    
-                    // Set success notification
-                    $this->setSuccessMessage('Profile picture removed successfully!');
-                    return true;
-                }
-            }
-            $this->errors[] = "No custom profile picture to remove";
-            return false;
-        } catch (PDOException $e) {
-            $this->errors[] = "Database error: " . $e->getMessage();
-            return false;
-        }
-    }
+require_once '../database.php';
+// Only start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+require_once 'includes/notifications.php';
 
-// Initialize profile handler
-$profileHandler = new UserProfile($_SESSION['user']['user_id']); // FIX: use 'user_id' not 'id'
-$user = $profileHandler->getUserData();
-
-// Handle form submissions
+$db = new Database();
+$user_id = $_SESSION['user']['user_id'];
+$errors = [];
+$successMsg = '';
 $redirect_needed = false;
+
+// Get user data
+$user = $db->getUserById($user_id);
 
 // Handle profile update
 if (isset($_POST['update_profile'])) {
     $profileData = [
-        'name' => trim($_POST['name']),
+        'user_id' => $user_id,
+        'first_name' => trim($_POST['first_name']),
+        'last_name' => trim($_POST['last_name']),
         'email' => trim($_POST['email']),
         'phone' => trim($_POST['phone'] ?? '')
     ];
-    
-    if ($profileHandler->updateProfile($profileData)) {
-        $redirect_needed = true;
+    $result = $db->updateUserProfileFull($profileData);
+    if ($result['success']) {
+        $_SESSION['user']['first_name'] = $profileData['first_name'];
+        $_SESSION['user']['last_name'] = $profileData['last_name'];
+        $_SESSION['user']['email'] = $profileData['email'];
+        setSuccessToast('Profile updated successfully!');
+        header("Location: admin_index.php?page=profile");
+        exit();
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
 // Handle profile picture upload
 if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] !== UPLOAD_ERR_NO_FILE) {
-    if ($profileHandler->updateProfilePicture($_FILES['profile_pic'])) {
+    $result = $db->updateUserProfilePicture($user_id, $_FILES['profile_pic'], $user['profile_pic']);
+    if ($result['success']) {
+        $_SESSION['user']['profile_pic'] = $result['profile_pic'];
+        $successMsg = 'Profile picture updated successfully!';
         $redirect_needed = true;
+    } else {
+        $errors[] = $result['error_message'];
     }
 }
 
 // Handle password change
 if (isset($_POST['change_password'])) {
-    $passwordData = [
-        'current_password' => $_POST['current_password'],
-        'new_password' => $_POST['new_password'],
-        'confirm_password' => $_POST['confirm_password']
-    ];
-    
-    if ($profileHandler->changePassword($passwordData)) {
-        $redirect_needed = true;
+    $result = $db->changeUserPassword($user_id, $_POST['current_password'], $_POST['new_password'], $_POST['confirm_password']);
+    if ($result['success']) {
+        setSuccessToast('Password changed successfully!');
+        header("Location: admin_index.php?page=profile");
+        exit();
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
 // Handle profile picture delete
 if (isset($_GET['delete_picture']) && $_GET['delete_picture'] === '1') {
-    if ($profileHandler->deleteProfilePicture()) {
+    $result = $db->deleteUserProfilePicture($user_id, $user['profile_pic']);
+    if ($result['success']) {
+        $_SESSION['user']['profile_pic'] = $result['profile_pic'];
+        $successMsg = 'Profile picture removed successfully!';
         $redirect_needed = true;
+    } else {
+        $errors[] = $result['error_message'];
     }
 }
 
-// Get any validation errors
-$errors = $profileHandler->getErrors();
-
-// If we need to redirect, do it now while the output buffer is still active
+// Redirect if needed
 if ($redirect_needed) {
     header("Location: admin_index.php?page=profile");
     exit();
@@ -399,6 +101,12 @@ if ($redirect_needed) {
             <?php endforeach; ?>
         </ul>
         <button type="button" class="dismiss-alert"><i class="fas fa-times"></i></button>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($successMsg)): ?>
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> <?php echo $successMsg; ?>
     </div>
     <?php endif; ?>
 
@@ -430,7 +138,7 @@ if ($redirect_needed) {
                         </div>
                     </div>
                     <div class="profile-details">
-                        <h3><?php echo htmlspecialchars($user['name']); ?></h3>
+                        <h3><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h3>
                         <p class="role"><span class="badge">Administrator</span></p>
                         <p class="email"><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
                         <?php if (!empty($user['phone'])): ?>
@@ -471,9 +179,14 @@ if ($redirect_needed) {
                                     <h4 class="card-title">Edit Profile Information</h4>
                                     <form method="POST">
                                         <div class="form-group">
-                                            <label for="name">Full Name</label>
-                                            <input type="text" class="form-control" id="name" name="name" 
-                                                   value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                                            <label for="first_name">First Name</label>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                                   value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="last_name">Last Name</label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                                   value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="email">Email Address</label>
@@ -595,3 +308,4 @@ document.addEventListener('DOMContentLoaded', function() {
 // Flush the output buffer
 ob_end_flush();
 ?>
+

@@ -1,151 +1,66 @@
 <?php
-// Include Order model
-require_once 'models/Order.php';
+require_once '../database.php';
 require_once 'includes/notifications.php';
 
-// Database connection
-$db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$db = new Database();
 
-// Instantiate Order object
-$orderObj = new Order($db);
-
-// Set default view mode to list
 $viewMode = 'list';
 $order = null;
-$orderItems = null;
+$orderItems = [];
+$errorMsg = '';
+$successMsg = '';
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
+$page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+$perPage = 10;
 
-// Check if edit mode is requested
+// Edit mode
 if (isset($_GET['edit'])) {
     $viewMode = 'edit';
-    $id = $_GET['edit'];
-
-    // Get order details using the model
-    $orderObj->id = $id;
-    if ($orderObj->readSingle()) {
-        // Use null coalescing operator to avoid undefined index warnings
-        $order = [
-            'id' => $orderObj->id ?? '',
-            'order_reference' => $orderObj->order_reference ?? '',
-            'user_id' => $orderObj->user_id ?? '',
-            'total_amount' => $orderObj->total_amount ?? 0,
-            'status' => $orderObj->status ?? '',
-            'created_at' => $orderObj->created_at ?? '',
-            'first_name' => $orderObj->first_name ?? '',
-            'last_name' => $orderObj->last_name ?? '',
-            'email' => $orderObj->email ?? '',
-            'address' => $orderObj->address ?? '',
-            'city' => $orderObj->city ?? '',
-            'zip' => $orderObj->zip ?? '',
-            'country' => $orderObj->country ?? '',
-            'phone' => $orderObj->phone ?? ''
-        ];
-
-        // Get order items
-        $orderItemsStmt = $orderObj->getOrderItems();
-        $orderItems = $orderItemsStmt ? $orderItemsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
-    } else {
+    $id = (int)$_GET['edit'];
+    $order = $db->getOrderById($id);
+    $orderItems = $db->getOrderItems($id);
+    if (!$order) {
         setErrorToast("Order not found.");
         $viewMode = 'list';
     }
 }
 
-// Get status filter
-$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
-if (is_array($statusFilter)) {
-    $statusFilter = isset($statusFilter[0]) ? $statusFilter[0] : '';
-}
-
-// Handle edit form submission (update all fields, like products/barbers)
+// Handle edit form submission (update status)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order'])) {
-    try {
-        $orderObj->id = $_POST['order_id'];
-        $orderObj->status = $_POST['status'];
-        $orderObj->first_name = $orderObj->first_name ?? '';
-        $orderObj->last_name = $orderObj->last_name ?? '';
-        $orderObj->email = $orderObj->email ?? '';
-        $orderObj->address = $orderObj->address ?? '';
-        $orderObj->city = $orderObj->city ?? '';
-        $orderObj->zip = $orderObj->zip ?? '';
-        $orderObj->country = $orderObj->country ?? '';
-        $orderObj->phone = $orderObj->phone ?? '';
-
-        // Always update all fields, even if only status is editable
-        // (This ensures the update() method works like products/barbers)
-        $success = $orderObj->update();
-
-        if ($success) {
-            setSuccessToast("Order updated successfully!");
-            header("Location: ?page=orders&edit={$orderObj->id}");
-            exit();
-        } else {
-            setErrorToast("Failed to update order.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $updateData = [
+        'order_id' => $_POST['order_id'],
+        'status' => $_POST['status']
+    ];
+    $result = $db->updateOrderStatus($updateData['order_id'], $updateData['status']);
+    if ($result['success']) {
+        setSuccessToast("Order updated successfully!");
+        header("Location: ?page=orders&edit={$updateData['order_id']}");
+        exit();
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
-// Delete order (from action section or anywhere)
-if (isset($_GET['delete']) && !isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-    // Remove the JavaScript confirm alert, just redirect to confirmation step
-    header("Location: ?page=orders&delete={$id}&confirm_delete=1");
-    exit;
-}
-
-// Process confirmed deletion
+// Handle delete
 if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
-    $id = $_GET['delete'];
-
-    try {
-        // Get order details first for the record
-        $orderObj->id = $id;
-        $orderObj->readSingle();
-        $refNumber = $orderObj->order_reference;
-
-        // Delete the order using model
-        if ($orderObj->delete()) {
-            setSuccessToast("Order #$refNumber deleted successfully!");
-        } else {
-            setErrorToast("Failed to delete order.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $id = (int)$_GET['delete'];
+    $result = $db->deleteOrder($id);
+    if ($result['success']) {
+        setSuccessToast("Order deleted successfully!");
+    } else {
+        setErrorToast($result['error_message']);
     }
-    // Redirect to orders list after deletion to avoid resubmission
     header("Location: ?page=orders");
-    exit;
+    exit();
 }
 
 // Pagination for list view
 if ($viewMode === 'list') {
-    $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-    $perPage = 10;
-
-    // Get total count using model
-    $totalOrders = empty($statusFilter) ? $orderObj->count() : $orderObj->count($statusFilter);
+    $totalOrders = $db->countOrders($statusFilter);
     $totalPages = ceil($totalOrders / $perPage);
-
-    // Get orders for current page
-    $ordersStmt = $orderObj->read($page, $perPage, $statusFilter);
-    $orders = $ordersStmt->fetchAll(PDO::FETCH_ASSOC);
+    $offset = ($page - 1) * $perPage;
+    $orders = $db->getOrders($statusFilter, $perPage, $offset);
 }
-
-// Get country list for dropdown
-function getCountryList() {
-    return [
-        'US' => 'United States',
-        'CA' => 'Canada',
-        'UK' => 'United Kingdom',
-        'AU' => 'Australia',
-        'DE' => 'Germany',
-        'FR' => 'France',
-        'JP' => 'Japan',
-        'IN' => 'India'
-    ];
-}
-$countries = getCountryList();
 ?>
 
 <?php if ($viewMode === 'edit' && $order): ?>
@@ -203,7 +118,7 @@ $countries = getCountryList();
 
         <!-- Only allow editing status, but include hidden fields for all customer info -->
         <form method="post" class="admin-form" id="order-edit-form">
-            <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+            <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
             <input type="hidden" name="first_name" value="<?php echo htmlspecialchars($order['first_name'] ?? ''); ?>">
             <input type="hidden" name="last_name" value="<?php echo htmlspecialchars($order['last_name'] ?? ''); ?>">
             <input type="hidden" name="email" value="<?php echo htmlspecialchars($order['email'] ?? ''); ?>">
@@ -230,7 +145,7 @@ $countries = getCountryList();
                     <i class="fas fa-save"></i> Update Status
                 </button>
                 <a href="?page=orders" class="btn btn-outline">Cancel</a>
-                <a href="?page=orders&delete=<?php echo $order['id']; ?>" class="btn btn-danger">
+                <a href="?page=orders&delete=<?php echo $order['order_id']; ?>" class="btn btn-danger">
                     <i class="fas fa-trash"></i> Delete Order
                 </a>
             </div>
@@ -239,7 +154,11 @@ $countries = getCountryList();
         <!-- Show customer details as read-only -->
         <div class="form-section">
             <h3>Customer Details</h3>
-            <div><strong>Name:</strong> <?php echo htmlspecialchars(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? '')); ?></div>
+            <div><strong>Name:</strong>
+                <?php
+                echo htmlspecialchars(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? ''));
+                ?>
+            </div>
             <div><strong>Email:</strong> <?php echo htmlspecialchars($order['email'] ?? ''); ?></div>
             <div><strong>Phone:</strong> <?php echo htmlspecialchars($order['phone'] ?? ''); ?></div>
             <div><strong>Address:</strong> <?php echo htmlspecialchars($order['address'] ?? ''); ?>, <?php echo htmlspecialchars($order['city'] ?? ''); ?>, <?php echo htmlspecialchars($order['zip'] ?? ''); ?>, <?php echo htmlspecialchars($order['country'] ?? ''); ?></div>
@@ -316,7 +235,7 @@ $countries = getCountryList();
 <?php else: ?>
 <!-- LIST MODE -->
 <div class="admin-card">
-    <div class="admin-card-header"></div>
+    <div class="admin-card-header">
         <h2>Order Management</h2>
         <div class="actions">
             <a href="?page=orders" class="btn btn-outline btn-sm <?php echo empty($statusFilter) ? 'active' : ''; ?>">All</a>
@@ -327,8 +246,8 @@ $countries = getCountryList();
         </div>
     </div>
     <div class="admin-card-body">
-        <div class="table-responsive orders-table">
-            <table class="admin-table">
+        <div class="table-responsive orders-table" style="width:100%;overflow-x:auto;">
+            <table class="admin-table" style="min-width:900px;width:100%;">
                 <thead>
                     <tr>
                         <th>Reference</th>
@@ -346,8 +265,7 @@ $countries = getCountryList();
                                 // Calculate subtotal from order_items for this order
                                 $order_id = $row['order_id'];
                                 $subtotal = 0;
-                                $orderItemsStmt = $orderObj->getOrderItemsByOrderId($order_id);
-                                $orderItems = $orderItemsStmt ? $orderItemsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                                $orderItems = $db->getOrderItems($order_id);
                                 foreach ($orderItems as $item) {
                                     $subtotal += $item['price'] * $item['quantity'];
                                 }
@@ -361,7 +279,11 @@ $countries = getCountryList();
                                 </td>
                                 <td>
                                     <div class="customer-info">
-                                        <strong><?php echo htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></strong>
+                                        <strong>
+                                            <?php
+                                            echo htmlspecialchars(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+                                            ?>
+                                        </strong>
                                         <span class="email"><?php echo htmlspecialchars($row['email']); ?></span>
                                     </div>
                                 </td>
@@ -666,6 +588,21 @@ $countries = getCountryList();
     font-size: 12px;
     font-weight: 500;
 }
+
+/* Fix for table responsiveness and width */
+.admin-card-body {
+    width: 100%;
+    overflow-x: auto;
+}
+.table-responsive.orders-table {
+    width: 100%;
+    overflow-x: auto;
+}
+.admin-table {
+    min-width: 900px;
+    width: 100%;
+    /* ...existing code... */
+}
 </style>
 
 <script>
@@ -746,17 +683,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<?php
-// Add this helper method to your Order model if not present:
-if (!method_exists($orderObj, 'getOrderItemsByOrderId')) {
-    /**
-     * Get order items for a specific order_id
-     */
-    $orderObj->getOrderItemsByOrderId = function($order_id) use ($db) {
-        $stmt = $db->prepare("SELECT * FROM order_items WHERE order_id = ?");
-        $stmt->execute([$order_id]);
-        return $stmt;
-    };
-}
-?>

@@ -1,41 +1,22 @@
 <?php
-// Debug output - remove after fixing
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Use Product model for all CRUD operations
-require_once 'models/Product.php';
+require_once '../database.php';
 require_once 'includes/notifications.php';
 
-// Database connection
-$db = new PDO('mysql:host=localhost;dbname=barbershop', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$db = new Database();
 
-// Instantiate Product object
-$productObj = new Product($db);
-
-// Set default view mode to list
 $viewMode = 'list';
 $product = null;
+$errorMsg = '';
+$successMsg = '';
+$page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+$perPage = 10;
 
-// Check if edit mode is requested
+// Edit mode
 if (isset($_GET['edit'])) {
     $viewMode = 'edit';
-    $id = $_GET['edit'];
-    
-    // Get product details using the model
-    $productObj->id = $id;
-    if ($productObj->readSingle()) {
-        $product = [
-            'id' => $productObj->id,
-            'name' => $productObj->name,
-            'description' => $productObj->description,
-            'price' => $productObj->price,
-            'image' => $productObj->image,
-            'stock' => $productObj->stock,
-            'active' => $productObj->active
-        ];
-    } else {
+    $id = (int)$_GET['edit'];
+    $product = $db->getProductById($id);
+    if (!$product) {
         setErrorToast("Product not found.");
         $viewMode = 'list';
     }
@@ -43,202 +24,70 @@ if (isset($_GET['edit'])) {
 
 // Handle edit form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
-    try {
-        // Collect form data and sanitize
-        $productObj->id = $_POST['product_id'];
-        $productObj->name = htmlspecialchars($_POST['name']);
-        $productObj->description = htmlspecialchars($_POST['description']);
-        $productObj->price = (float)$_POST['price'];
-        $productObj->stock = (int)$_POST['stock'];
-        $productObj->active = isset($_POST['active']) ? 1 : 0;
-        
-        // Handle image upload if a new one is provided
-        if (!empty($_FILES['image']['name'])) {
-            $target_dir = "../uploads/products/";
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = 'product_' . time() . '.' . $file_extension;
-            $target_file = $target_dir . $filename;
-            
-            // Upload file
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-                $productObj->image = 'uploads/products/' . $filename;
-            } else {
-                setErrorToast("Failed to upload image.");
-            }
-        }
-        
-        // Update the product using model
-        if ($productObj->update()) {
-            setSuccessToast("Product updated successfully!");
-            $viewMode = 'list'; // Switch back to list view after update
-        } else {
-            setErrorToast("Failed to update product.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $updateData = [
+        'product_id' => $_POST['product_id'],
+        'name' => $_POST['name'],
+        'description' => $_POST['description'],
+        'price' => $_POST['price'],
+        'stock' => $_POST['stock'],
+        'active' => isset($_POST['active']) ? 1 : 0,
+        'image' => $_FILES['image'] ?? null
+    ];
+    $result = $db->updateProduct($updateData);
+    if ($result['success']) {
+        setSuccessToast("Product updated successfully!");
+        $viewMode = 'list';
+    } else {
+        setErrorToast($result['error_message']);
     }
-}
-
-// When updating a product's price, also update all related order_items and recalculate order totals
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
-    $product_id = $_POST['product_id'];
-    $new_price = $_POST['price'];
-
-    // Update product price
-    $stmt = $db->prepare("UPDATE products SET price = ? WHERE product_id = ?");
-    $stmt->execute([$new_price, $product_id]);
-
-    // --- Update order_items price for this product ---
-    $stmt = $db->prepare("UPDATE order_items SET price = ? WHERE product_id = ?");
-    $stmt->execute([$new_price, $product_id]);
-
-    // --- Recalculate total_amount for all affected orders ---
-    // Get all order_ids that have this product in order_items
-    $stmt = $db->prepare("SELECT DISTINCT order_id FROM order_items WHERE product_id = ?");
-    $stmt->execute([$product_id]);
-    $order_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-    foreach ($order_ids as $order_id) {
-        // Recalculate subtotal for this order
-        $stmt2 = $db->prepare("SELECT SUM(price * quantity) as subtotal FROM order_items WHERE order_id = ?");
-        $stmt2->execute([$order_id]);
-        $subtotal = (float)($stmt2->fetchColumn() ?: 0);
-
-        $shipping = 5.00;
-        $tax = $subtotal * 0.08;
-        $total = $subtotal + $shipping + $tax;
-
-        // Update orders table
-        $stmt3 = $db->prepare("UPDATE orders SET total_amount = ? WHERE order_id = ?");
-        $stmt3->execute([$total, $order_id]);
-    }
-    // --- END ---
-
-    // ...existing code for success/error messages...
 }
 
 // Handle new product creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_product'])) {
-    try {
-        // Collect form data and sanitize
-        $productObj->name = htmlspecialchars($_POST['name']);
-        $productObj->description = htmlspecialchars($_POST['description']);
-        $productObj->price = (float)$_POST['price'];
-        $productObj->stock = (int)$_POST['stock'];
-        $productObj->active = isset($_POST['active']) ? 1 : 0;
-        
-        // Handle image upload
-        $productObj->image = ''; // Default empty
-        
-        if (!empty($_FILES['image']['name'])) {
-            $target_dir = "../uploads/products/";
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = 'product_' . time() . '.' . $file_extension;
-            $target_file = $target_dir . $filename;
-            
-            // Upload file
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-                $productObj->image = 'uploads/products/' . $filename;
-            } else {
-                setErrorToast("Failed to upload image.");
-            }
-        }
-        
-        // Create the product
-        if ($productObj->create()) {
-            setSuccessToast("Product created successfully!");
-        } else {
-            setErrorToast("Failed to create product.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $createData = [
+        'name' => $_POST['name'],
+        'description' => $_POST['description'],
+        'price' => $_POST['price'],
+        'stock' => $_POST['stock'],
+        'active' => isset($_POST['active']) ? 1 : 0,
+        'image' => $_FILES['image'] ?? null
+    ];
+    $result = $db->createProduct($createData);
+    if ($result['success']) {
+        setSuccessToast("Product created successfully!");
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
-// Delete product - Remove the old implementation that uses direct scripts
-if (isset($_GET['delete']) && !isset($_GET['confirm_delete'])) {
-    // Don't output anything here - we'll handle this with client-side JavaScript
-}
-
-// Process confirmed deletion - add more robust error handling
+// Handle delete
 if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
     $id = (int)$_GET['delete'];
-    
-    if ($id <= 0) {
-        setErrorToast("Invalid product ID");
+    $result = $db->deleteProduct($id);
+    if ($result['success']) {
+        setSuccessToast("Product deleted successfully!");
     } else {
-        try {
-            // Set the product ID
-            $productObj->id = $id;
-            
-            // Try to get product details before deletion
-            if (!$productObj->readSingle()) {
-                setErrorToast("Product not found");
-            } else {
-                $productName = $productObj->name;
-                
-                // Attempt to delete the product
-                if ($productObj->delete()) {
-                    setSuccessToast("Product \"$productName\" deleted successfully!");
-                } else {
-                    setErrorToast("Failed to delete product. Please try again.");
-                }
-            }
-        } catch (PDOException $e) {
-            // Log error for debugging
-            error_log("PDO Error: " . $e->getMessage());
-            
-            // Check for foreign key constraint violations
-            if ($e->getCode() == '23000' || strpos($e->getMessage(), 'foreign key constraint') !== false) {
-                setErrorToast("Cannot delete this product because it's referenced in orders. Consider marking it as inactive instead.");
-            } else {
-                setErrorToast("Database error occurred: " . $e->getMessage());
-            }
-        } catch (Exception $e) {
-            setErrorToast($e->getMessage());
-        }
+        setErrorToast($result['error_message']);
     }
 }
 
-// Toggle product active status
+// Handle toggle active status
 if (isset($_POST['toggle_active'])) {
-    try {
-        $productObj->id = $_POST['product_id'];
-        if ($productObj->toggleActive()) {
-            // Get current status after toggle
-            $productObj->readSingle();
-            $status = $productObj->active ? 'active' : 'inactive';
-            setSuccessToast("Product is now $status.");
-        } else {
-            setErrorToast("Failed to update product status.");
-        }
-    } catch (PDOException $e) {
-        setErrorToast("Database error: " . $e->getMessage());
+    $id = (int)$_POST['product_id'];
+    $result = $db->toggleProductActive($id);
+    if ($result['success']) {
+        setSuccessToast("Product status updated.");
+    } else {
+        setErrorToast($result['error_message']);
     }
 }
 
 // Pagination for list view
 if ($viewMode === 'list') {
-    $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-    if (is_array($page)) {
-        $page = 1;
-    }
-    $perPage = 10;
-    
-    // Get total count
-    $totalProducts = $productObj->count();
+    $totalProducts = $db->countProducts();
     $totalPages = ceil($totalProducts / $perPage);
-    
-    // Get products for current page
-    $products = $productObj->read($page, $perPage)->fetchAll(PDO::FETCH_ASSOC);
+    $offset = ($page - 1) * $perPage;
+    $products = $db->getProducts($perPage, $offset);
 }
 
 // If we're in "new" mode, set viewMode
@@ -258,7 +107,7 @@ if (isset($_GET['new'])) {
     </div>
     <div class="admin-card-body">
         <form method="post" class="admin-form" enctype="multipart/form-data">
-            <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+            <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
             
             <div class="row">
                 <div class="col-md-8">
@@ -613,13 +462,11 @@ function submitStatusForm(id) {
     align-items: center;
     justify-content: center;
 }
-
 .product-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
-
 .no-image-small {
     width: 100%;
     height: 100%;
@@ -629,37 +476,30 @@ function submitStatusForm(id) {
     color: var(--text-muted);
     font-size: 1.5rem;
 }
-
 .product-info {
     display: flex;
     flex-direction: column;
 }
-
 .product-info strong {
     color: var(--secondary-color);
     margin-bottom: 5px;
 }
-
 .product-info .description {
     color: var(--text-muted);
     font-size: 0.85rem;
     line-height: 1.4;
 }
-
 .product-price {
     font-weight: 600;
     color: var(--primary-color);
 }
-
 .product-stock {
     display: flex;
     flex-direction: column;
 }
-
 .product-stock.low-stock {
     color: #F44336;
 }
-
 .stock-warning {
     font-size: 0.7rem;
     margin-top: 3px;
@@ -667,7 +507,6 @@ function submitStatusForm(id) {
     align-items: center;
     gap: 3px;
 }
-
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -680,17 +519,14 @@ function submitStatusForm(id) {
     cursor: pointer;
     transition: transform 0.2s ease;
 }
-
 .status-badge:hover {
     transform: translateY(-2px);
 }
-
 .status-badge.status-active {
-    background-color: rgba(76, 175, 80, 0.1);
+    background-color: rgba(76, 175, 76, 0.1);
     color: #4CAF50;
     border-left: 4px solid #4CAF50;
 }
-
 .status-badge.status-inactive {
     background-color: rgba(158, 158, 158, 0.1);
     color: #9E9E9E;
@@ -735,9 +571,6 @@ function submitStatusForm(id) {
 
 .no-image i {
     font-size: 3rem;
-
-
-}    margin-bottom: 10px;    opacity: 0.5;
 }
 
 .form-control-file {
@@ -753,4 +586,5 @@ function submitStatusForm(id) {
         height: 40px;
     }
 }
+
 </style>

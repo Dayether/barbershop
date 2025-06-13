@@ -64,7 +64,19 @@ try {
     <section class="page-banner appointment-banner">
         <div class="container">
             <h1>Book Your Appointment</h1>
-            <p>Welcome back, <?= htmlspecialchars($_SESSION['user']['name']) ?>! Schedule your next grooming session.</p>
+            <p>Welcome back, 
+                <?php
+                    if (isset($_SESSION['user'])) {
+                        $user = $_SESSION['user'];
+                        if (!empty($user['first_name']) || !empty($user['last_name'])) {
+                            echo htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
+                        } elseif (!empty($user['name'])) {
+                            echo htmlspecialchars($user['name']);
+                        } else {
+                            echo 'Valued Customer';
+                        }
+                    }
+                ?>! Schedule your next grooming session.</p>
         </div>
     </section>
 
@@ -218,7 +230,16 @@ try {
                                     <div class="input-icon-wrapper">
                                         <i class="fas fa-user input-icon"></i>
                                         <input type="text" id="name" name="name" placeholder="Enter your full name" required 
-                                        value="<?= isset($_SESSION['user']) ? htmlspecialchars($_SESSION['user']['name']) : '' ?>">
+                                        value="<?php
+                                            if (isset($_SESSION['user'])) {
+                                                $user = $_SESSION['user'];
+                                                if (!empty($user['first_name']) || !empty($user['last_name'])) {
+                                                    echo htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
+                                                } elseif (!empty($user['name'])) {
+                                                    echo htmlspecialchars($user['name']);
+                                                }
+                                            }
+                                        ?>">
                                     </div>
                                 </div>
                                 
@@ -653,13 +674,32 @@ try {
             // Update summary before confirmation
             function updateSummary() {
                 const selectedService = document.querySelector('input[name="service_id"]:checked');
-                const serviceName = selectedService ? selectedService.value : '';
+                // Get service name from the label text or dataset
+                let serviceName = '';
+                if (selectedService) {
+                    // Try to get the label's h4 text (service name)
+                    const label = document.querySelector('label[for="' + selectedService.id + '"]');
+                    if (label) {
+                        const h4 = label.querySelector('h4');
+                        if (h4) {
+                            serviceName = h4.textContent.trim();
+                        }
+                    }
+                }
                 const servicePrice = selectedService ? selectedService.dataset.price : '0';
                 
                 const appointmentDate = document.getElementById('appointment-date').value;
                 const appointmentTime = document.querySelector('input[name="appointment-time"]:checked')?.value || '';
                 
-                const barber = document.getElementById('barber_id').value || 'Any Available Barber';
+                // Get barber name from select option text
+                const barberSelect = document.getElementById('barber_id');
+                let barber = 'Any Available Barber';
+                if (barberSelect && barberSelect.value) {
+                    const selectedOption = barberSelect.options[barberSelect.selectedIndex];
+                    if (selectedOption) {
+                        barber = selectedOption.text;
+                    }
+                }
                 const name = document.getElementById('name').value;
                 const email = document.getElementById('email').value;
                 const phone = document.getElementById('phone').value;

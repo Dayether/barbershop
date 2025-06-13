@@ -1,21 +1,16 @@
 <?php
 session_start();
-require_once 'includes/db_connection.php';
+require_once 'database.php';
 
 // Check if user is admin (for security)
 $is_admin = isset($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
 
-// Get the last 5 orders
+$orders = [];
 try {
-    $stmt = $conn->prepare("SELECT o.*, COUNT(oi.id) as item_count 
-                           FROM orders o 
-                           LEFT JOIN order_items oi ON o.id = oi.order_id 
-                           GROUP BY o.id 
-                           ORDER BY o.created_at DESC 
-                           LIMIT 5");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $orders = $result->fetch_all(MYSQLI_ASSOC);
+    if ($is_admin) {
+        $db = new Database();
+        $orders = $db->getRecentOrdersWithItemCount(5);
+    }
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
 }
@@ -157,6 +152,11 @@ try {
                 <a href="login.php" class="login-link">Login</a>
             </div>
         <?php endif; ?>
+    </div>
+    
+    <?php include 'includes/footer.php'; ?>
+</body>
+</html>
     </div>
     
     <?php include 'includes/footer.php'; ?>

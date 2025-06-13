@@ -1,5 +1,14 @@
 <?php
 session_start();
+require_once 'database.php';
+
+// Fetch all unique active services using OOP
+try {
+    $db = new Database();
+    $allServices = $db->getUniqueActiveServices();
+} catch (Exception $e) {
+    $allServices = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

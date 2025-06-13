@@ -1,6 +1,17 @@
 <?php 
 session_start();
-require_once 'includes/db_connection.php';
+require_once 'database.php';
+
+// --- AJAX endpoint for cart actions ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_to_cart') {
+    $productId = isset($_POST['id']) ? intval($_POST['id']) : 0;
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+    $db = new Database();
+    $result = $db->cartAddProduct($productId, $quantity);
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
+}
 
 // Redirect to login if user is not logged in
 if (!isset($_SESSION['user'])) {
@@ -21,45 +32,13 @@ if (isset($_SESSION['new_login']) && $_SESSION['new_login'] === true) {
     $_SESSION['new_login'] = false;
 }
 
-// Get products from database
+// Get products from database using OOP
 $products = [];
 try {
-    // Get all active products
-    $stmt = $conn->prepare("SELECT product_id, name, description, price, image, stock FROM products WHERE active = 1");
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            // Determine category based on product name or description
-            $row['category'] = determineCategory($row['name'], $row['description']);
-            $products[] = $row;
-        }
-    }
-    $stmt->close();
+    $db = new Database();
+    $products = $db->getActiveProductsWithCategory();
 } catch (Exception $e) {
     error_log("Database error: " . $e->getMessage());
-}
-
-// Helper function to determine a product's category
-function determineCategory($name, $description) {
-    $name_lower = strtolower($name);
-    $desc_lower = strtolower($description);
-    
-    if (strpos($name_lower, 'pomade') !== false || 
-        strpos($name_lower, 'clay') !== false || 
-        strpos($name_lower, 'spray') !== false ||
-        strpos($desc_lower, 'hair') !== false) {
-        return 'hair';
-    } elseif (strpos($name_lower, 'beard') !== false || 
-             strpos($name_lower, 'shav') !== false) {
-        return 'beard';
-    } elseif (strpos($name_lower, 'razor') !== false || 
-             strpos($name_lower, 'comb') !== false) {
-        return 'tools';
-    }
-    
-    return 'all'; // Default category
 }
 
 // If no products found, show message to admin
@@ -285,12 +264,30 @@ if (count($products) == 0) {
                     this.classList.add('added');
                     const originalText = this.innerHTML;
                     this.innerHTML = '<i class="fas fa-check"></i> Added';
-                    
-                    // Add to cart without notification
-                    if (typeof window.addToCart === 'function') {
-                        window.addToCart(item);
-                    }
-                    
+
+                    // --- AJAX call to add to cart on server ---
+                    fetch('shop.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=add_to_cart&id=${encodeURIComponent(item.id)}&quantity=1`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Optionally update cart count in floating button
+                        if (data.success && data.itemsCount !== undefined) {
+                            let cartBtn = document.getElementById('floating-cart-btn');
+                            if (cartBtn) {
+                                let countElem = cartBtn.querySelector('.cart-count');
+                                if (countElem) countElem.textContent = data.itemsCount;
+                            } else if (data.itemsCount > 0) {
+                                // Optionally reload to show floating cart button if it was hidden
+                                location.reload();
+                            }
+                        }
+                    });
+
                     // Reset button after delay
                     setTimeout(() => {
                         this.classList.remove('added');
@@ -303,7 +300,16 @@ if (count($products) == 0) {
         // Filter functionality handled by shop.js
     });
     </script>
+</body>
+</html>
+            });
+        });
+        
+        // Filter functionality handled by shop.js
+    });
+    </script>
     <script src="js/cart.js"></script>
     <script src="js/shop.js"></script>
 </body>
 </html>
+
