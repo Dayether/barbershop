@@ -114,6 +114,10 @@ if ($viewMode === 'list') {
                 <span class="label">Status:</span>
                 <span class="value status-badge status-<?php echo $order['status']; ?>"><?php echo ucfirst($order['status']); ?></span>
             </div>
+            <div class="order-payment-method">
+                <span class="label">Payment Method:</span>
+                <span class="value"><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $order['payment_method'] ?? 'Credit Card'))); ?></span>
+            </div>
         </div>
 
         <!-- Only allow editing status, but include hidden fields for all customer info -->

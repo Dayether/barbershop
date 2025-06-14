@@ -190,6 +190,7 @@ CREATE TABLE `orders` (
   `zip` varchar(20) NOT NULL,
   `country` varchar(50) NOT NULL,
   `phone` varchar(20) NOT NULL,
+  `payment_method` varchar(32) NOT NULL DEFAULT 'credit_card',
   PRIMARY KEY (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -658,3 +659,11 @@ BEGIN
 END$$
 DELIMITER ;
 DELIMITER ;
+
+ALTER TABLE `orders`
+MODIFY COLUMN `user_id` INT NULL;
+
+ALTER TABLE `orders`
+    MODIFY COLUMN `user_id` INT NULL,
+    DROP FOREIGN KEY `orders_ibfk_1`,
+    ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;

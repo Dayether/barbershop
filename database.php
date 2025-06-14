@@ -1767,8 +1767,8 @@ class Database {
 
         // Use calculated total_amount, ignore incoming total_amount/order_total for DB
         $stmt = $this->conn->prepare(
-            "INSERT INTO orders (order_reference, user_id, first_name, last_name, email, address, city, zip, country, phone, total_amount, status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            "INSERT INTO orders (order_reference, user_id, first_name, last_name, email, address, city, zip, country, phone, total_amount, payment_method, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
         );
         if (!$stmt) {
             return [
@@ -1785,10 +1785,11 @@ class Database {
         $zip = $orderData['zip'];
         $country = $orderData['country'];
         $phone = $orderData['phone'];
+        $payment_method = isset($orderData['payment_method']) ? $orderData['payment_method'] : 'credit_card';
         $status = 'pending';
 
         $stmt->bind_param(
-            "sissssssssds",
+            "sissssssssdss",
             $order_reference,
             $user_id,
             $first_name,
@@ -1800,6 +1801,7 @@ class Database {
             $country,
             $phone,
             $total_amount,
+            $payment_method,
             $status
         );
         $success = $stmt->execute();

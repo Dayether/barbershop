@@ -17,6 +17,7 @@ class Order {
     public $zip;
     public $country;
     public $phone;
+    public $payment_method;
     
     // Constructor with database connection
     public function __construct($db) {
@@ -89,6 +90,7 @@ class Order {
         $this->user_id = $row['user_id'];
         $this->total_amount = $row['total_amount'];
         $this->status = $row['status'];
+        $this->payment_method = $row['payment_method']; // Add this line
         $this->created_at = $row['created_at'];
         $this->first_name = $row['first_name'];
         $this->last_name = $row['last_name'];
