@@ -8,12 +8,26 @@ if (isset($_SESSION['payment_errors'])) {
     unset($_SESSION['payment_errors']);
 }
 
+// Payment status feedback (success/failure)
+$payment_status = null;
+$payment_status_message = '';
+if (isset($_SESSION['payment_status'])) {
+    $payment_status = $_SESSION['payment_status'];
+    $payment_status_message = isset($_SESSION['payment_status_message']) ? $_SESSION['payment_status_message'] : '';
+    unset($_SESSION['payment_status'], $_SESSION['payment_status_message']);
+}
+
 // Initialize cart from session
 $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
 // Only redirect if cart is truly empty
 if (empty($cart)) {
-    header('Location: shop.php');
+    // Show warning and redirect using JS
+    echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Empty Cart</title>';
+    echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+    echo '</head><body>';
+    echo '<script>Swal.fire({icon: "warning", title: "No products ordered", text: "Your cart is empty. Please proceed to shop first.", confirmButtonText: "Go to Shop", allowOutsideClick: false}).then(function(){window.location.href = "shop.php";}); setTimeout(function(){window.location.href = "shop.php";}, 4000);</script>';
+    echo '</body></html>';
     exit;
 }
 
@@ -350,6 +364,25 @@ function old($key, $default = '') {
             position: 'topCenter',
             timeout: 5000
         });
+        <?php endif; ?>
+
+        // Payment status feedback (success/failure)
+        <?php if ($payment_status === 'success'): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Payment Successful',
+                text: 'Your payment was processed successfully!',
+                confirmButtonText: 'OK',
+                timer: 4000
+            });
+        <?php elseif ($payment_status === 'failed'): ?>
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: '<?php echo addslashes($payment_status_message ?: "Your payment could not be processed. Please try again."); ?>',
+                confirmButtonText: 'OK',
+                timer: 5000
+            });
         <?php endif; ?>
 
         // Improved Form Validation

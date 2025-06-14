@@ -3,7 +3,7 @@ session_start();
 require_once 'database.php';
 
 if (isset($_SESSION['user'])) {
-    if (isset($_SESSION['user']['account_type']) && $_SESSION['user']['account_type'] == 1) {
+    if (isset($_SESSION['user']['account_type']) && ($_SESSION['user']['account_type'] == 1 || $_SESSION['user']['account_type'] == 2)) {
         header('Location: admin/admin_index.php');
     } else {
         header('Location: index.php');
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($userData) {
             $_SESSION['user'] = $userData;
             $_SESSION['new_login'] = true;
-            if ($userData['account_type'] == 1) {
+            if ($userData['account_type'] == 1 || $userData['account_type'] == 2) {
                 header('Location: admin/admin_index.php');
                 exit;
             }
@@ -249,5 +249,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </body>
 </html>
-                
-    
+
+
