@@ -142,7 +142,8 @@ if (count($products) == 0) {
                             <?php endif; ?>
                             
                             <div class="product-image-wrapper">
-                                <img src="<?= !empty($product['image']) ? $product['image'] : 'images/product-placeholder.jpg' ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+                                <img src="<?= !empty($product['image']) ? 'uploads/products/' . basename($product['image']) : 'uploads/products/product-placeholder.jpg' ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+                                
                                 <button class="quick-view-btn">Quick View</button>
                             </div>
                             
@@ -302,11 +303,7 @@ if (count($products) == 0) {
     </script>
 </body>
 </html>
-            });
-        });
         
-        // Filter functionality handled by shop.js
-    });
     </script>
     <script src="js/cart.js"></script>
     <script src="js/shop.js"></script>

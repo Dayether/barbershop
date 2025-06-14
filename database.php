@@ -228,12 +228,12 @@ class Database {
         return $user_data;
     }
 
-    public function insertContactMessage($name, $email, $phone, $subject, $message) {
+    public function insertContactMessage($name, $email, $phone, $subject, $message, $user_id = null) {
         $status = "new";
         $stmt = $this->conn->prepare(
-            "INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())"
+            "INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at, user_id) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)"
         );
-        $stmt->bind_param("ssssss", $name, $email, $phone, $subject, $message, $status);
+        $stmt->bind_param("ssssssi", $name, $email, $phone, $subject, $message, $status, $user_id);
         $success = $stmt->execute();
         $error = $stmt->error;
         $stmt->close();
@@ -1348,7 +1348,7 @@ class Database {
         $currentImage = $product ? $product['image'] : '';
 
         if ($data['image'] && isset($data['image']['tmp_name']) && $data['image']['tmp_name']) {
-            $target_dir = "uploads/products/";
+            $target_dir = "../uploads/products/";
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0755, true);
             }
@@ -1657,10 +1657,23 @@ class Database {
                 'error_message' => 'New password must be different from the current password'
             ];
         }
-        if (strlen($new_password) < 6) {
+        // Enforce password requirements
+        if (strlen($new_password) < 8) {
             return [
                 'success' => false,
-                'error_message' => 'New password must be at least 6 characters'
+                'error_message' => 'New password must be at least 8 characters long'
+            ];
+        }
+        if (!preg_match('/[A-Z]/', $new_password)) {
+            return [
+                'success' => false,
+                'error_message' => 'New password must contain at least one uppercase letter'
+            ];
+        }
+        if (!preg_match('/[0-9]/', $new_password)) {
+            return [
+                'success' => false,
+                'error_message' => 'New password must contain at least one number'
             ];
         }
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);

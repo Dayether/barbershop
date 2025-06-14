@@ -98,19 +98,17 @@ CREATE TABLE `appointment_history` (
   `notes` text DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `user_id` int(11) DEFAULT NULL,
-  `staff_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`ah_id`),
   KEY `appointment_id` (`appointment_id`),
-  KEY `user_id` (`user_id`),
-  KEY `staff_id` (`staff_id`)
+  KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `appointment_history`
 --
 
-INSERT INTO `appointment_history` (`ah_id`, `appointment_id`, `action`, `notes`, `created_at`, `user_id`, `staff_id`) VALUES
-(1, 6, 'reschedule', 'Appointment rescheduled by customer to May 31, 2025 at 9:00 AM', '2025-05-14 00:24:50', NULL, NULL);
+INSERT INTO `appointment_history` (`ah_id`, `appointment_id`, `action`, `notes`, `created_at`, `user_id`) VALUES
+(1, 6, 'reschedule', 'Appointment rescheduled by customer to May 31, 2025 at 9:00 AM', '2025-05-14 00:24:50', NULL);
 
 -- --------------------------------------------------------
 
@@ -142,20 +140,53 @@ INSERT INTO `barbers` (`barber_id`, `name`, `bio`, `image`, `active`) VALUES
 (8, 'Robert', 'Award-winning barber with a passion for precision', 'uploads/barbers/robert.jpg', 1);
 
 -- --------------------------------------------------------
+-- Table structure for table `users`
+--
 
+CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `profile_pic` varchar(255) DEFAULT 'uploads/default-profile.jpg',
+  `phone` varchar(20) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `account_type` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `email`, `password`, `profile_pic`, `phone`, `created_at`, `account_type`) VALUES
+(1, 'ivan', 'loop', 'alcantaraivan2003@gmail.com', '$2y$10$xFcFIMG1ltsnjihYwCuc8ODMh2HReoApYqWS9j3nKh5F7O2zAiFai', 'uploads/profiles/profile_1_1747121145.jpg', '', '2025-05-11 12:28:25', '1'),
+(2, 'Cath', 'Agno', 'cjhoyagno941@gmail.com', '$2y$10$DlLggsLsVVIbiqj2HL9zLOFdIomET2bR8R/XoPyvZYQokzRqIuRKi', 'uploads/profiles/profile_2_1746966826.jpg', NULL, '2025-05-11 12:31:54', '0'),
+(3, 'test', 'van', 'alcantarafinals@gmail.com', '$2y$10$5wFo0bPl7Y0dJEoXRgmf4uuEz0h5Pf7ohehZIvYLPbdrMMrS2Rnzi', 'images/default-profile.png', NULL, '2025-05-11 14:49:17', NULL),
+(4, 'alea', 'ALCANTARA', 'aleash@gmail.com', '$2y$10$DsMYUWFowBnvO.7FR6R/I.8bekPQJZOaZou9.OBvfwMdoLz84en1m', 'uploads/profiles/profile_4_1746978623.jpg', '', '2025-05-11 14:52:02', NULL),
+(5, 'ranuel', 'viray', 'superviray@gmail.com', '$2y$10$BFyIitZAUwqW4xEBwt33dO9NBtWrgfx0qtzXB0yzlr0ebeBjtft5y', 'images/default-profile.png', NULL, '2025-05-13 07:43:43', NULL),
+(6, 'Admin', 'User', 'admin@tipunobarbershop.com', 'password', 'uploads/default-profile.jpg', NULL, '2025-05-13 17:11:37', '1'),
+(7, 'abcde', 'agno', 'abcde@gmail.com', '$2y$10$t1.cUxIZazzwzzdET0pmvOf3cT1OtY//e9b5y9MbpMVE3/ADOQJk2', 'uploads/profiles/profile_7_1748433283.jpg', '', '2025-05-28 11:53:43', NULL);
 --
 -- Table structure for table `contact_messages`
 --
 
 CREATE TABLE `contact_messages` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `subject` varchar(100) NOT NULL,
   `message` text NOT NULL,
+  `reply` text DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'new',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `fk_contact_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -328,35 +359,7 @@ INSERT INTO `services` (`service_id`, `name`, `description`, `duration`, `price`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
---
 
-CREATE TABLE `users` (
-  `user_id` int(11) NOT NULL AUTO_INCREMENT,
-  `first_name` varchar(50) NOT NULL,
-  `last_name` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `profile_pic` varchar(255) DEFAULT 'uploads/default-profile.jpg',
-  `phone` varchar(20) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `account_type` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`user_id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `email`, `password`, `profile_pic`, `phone`, `created_at`, `account_type`) VALUES
-(1, 'ivan', 'loop', 'alcantaraivan2003@gmail.com', '$2y$10$xFcFIMG1ltsnjihYwCuc8ODMh2HReoApYqWS9j3nKh5F7O2zAiFai', 'uploads/profiles/profile_1_1747121145.jpg', '', '2025-05-11 12:28:25', '1'),
-(2, 'Cath', 'Agno', 'cjhoyagno941@gmail.com', '$2y$10$DlLggsLsVVIbiqj2HL9zLOFdIomET2bR8R/XoPyvZYQokzRqIuRKi', 'uploads/profiles/profile_2_1746966826.jpg', NULL, '2025-05-11 12:31:54', '0'),
-(3, 'test', 'van', 'alcantarafinals@gmail.com', '$2y$10$5wFo0bPl7Y0dJEoXRgmf4uuEz0h5Pf7ohehZIvYLPbdrMMrS2Rnzi', 'images/default-profile.png', NULL, '2025-05-11 14:49:17', NULL),
-(4, 'alea', 'ALCANTARA', 'aleash@gmail.com', '$2y$10$DsMYUWFowBnvO.7FR6R/I.8bekPQJZOaZou9.OBvfwMdoLz84en1m', 'uploads/profiles/profile_4_1746978623.jpg', '', '2025-05-11 14:52:02', NULL),
-(5, 'ranuel', 'viray', 'superviray@gmail.com', '$2y$10$BFyIitZAUwqW4xEBwt33dO9NBtWrgfx0qtzXB0yzlr0ebeBjtft5y', 'images/default-profile.png', NULL, '2025-05-13 07:43:43', NULL),
-(6, 'Admin', 'User', 'admin@tipunobarbershop.com', 'password', 'uploads/default-profile.jpg', NULL, '2025-05-13 17:11:37', '1'),
-(7, 'abcde', 'agno', 'abcde@gmail.com', '$2y$10$t1.cUxIZazzwzzdET0pmvOf3cT1OtY//e9b5y9MbpMVE3/ADOQJk2', 'uploads/profiles/profile_7_1748433283.jpg', '', '2025-05-28 11:53:43', NULL);
 
 --
 -- Indexes for dumped tables
@@ -385,8 +388,7 @@ ALTER TABLE `appointments`
 ALTER TABLE `appointment_history`
   ADD PRIMARY KEY (`ah_id`),
   ADD KEY `appointment_id` (`appointment_id`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `staff_id` (`staff_id`);
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `barbers`
@@ -658,12 +660,3 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-DELIMITER ;
-
-ALTER TABLE `orders`
-MODIFY COLUMN `user_id` INT NULL;
-
-ALTER TABLE `orders`
-    MODIFY COLUMN `user_id` INT NULL,
-    DROP FOREIGN KEY `orders_ibfk_1`,
-    ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;

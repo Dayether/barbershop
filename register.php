@@ -53,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Password is required';
     } elseif (strlen($password) < 8) {
         $errors[] = 'Password must be at least 8 characters';
+    } elseif (!preg_match('/[A-Z]/', $password)) {
+        $errors[] = 'Password must contain at least one uppercase letter';
+    } elseif (!preg_match('/[0-9]/', $password)) {
+        $errors[] = 'Password must contain at least one number';
     }
 
     if (!isset($_POST['terms']) || $_POST['terms'] !== 'on') {
@@ -428,32 +432,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if (!isFirstNameValid || !isLastNameValid ||
                     emailInput.classList.contains('is-invalid') ||
-                    !isPasswordValid || !areTermsAccepted) {
-                    event.preventDefault();
-                }
-            });
-            
-            // Initial validation to show any pre-filled fields
-            if (document.getElementById('first_name').value) validateFirstName();
-            if (document.getElementById('last_name').value) validateLastName();
-            if (document.getElementById('email').value) validateEmail();
-        });
-    </script>
-</body>
-</html>
-                    event.preventDefault();
-                }
-            });
-            // Initial validation to show any pre-filled fields
-            // Initial validation to show any pre-filled fieldslidateFirstName();
-            if (document.getElementById('first_name').value) validateFirstName();
-            if (document.getElementById('last_name').value) validateLastName();
-            if (document.getElementById('email').value) validateEmail();
-        });t>
-    </script>
-</body>
-</html>
-                    emailInput.classList.contains('is-invalid') || 
                     !isPasswordValid || !areTermsAccepted) {
                     event.preventDefault();
                 }
