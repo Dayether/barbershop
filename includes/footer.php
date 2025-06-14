@@ -99,23 +99,6 @@
         </div>
     </div>
     
-    <div class="newsletter-bar">
-        <div class="container">
-            <div class="newsletter-content">
-                <div class="newsletter-text">
-                    <h4><i class="fas fa-envelope-open-text"></i> Join Our VIP List</h4>
-                    <p>Subscribe for exclusive offers and grooming tips</p>
-                </div>
-                <form class="newsletter-form" id="newsletter-form" action="#" method="post">
-                    <div class="newsletter-input-group">
-                        <input type="email" name="email" placeholder="Your email address" aria-label="Email address for newsletter" required>
-                        <button type="submit" class="btn-newsletter">Subscribe</button>
-                    </div>
-                    <div class="form-response" id="newsletter-response"></div>
-                </form>
-            </div>
-        </div>
-    </div>
     
     <div class="footer-bottom">
         <div class="container">
