@@ -9,6 +9,27 @@ $message = null;
 $errorMsg = '';
 $successMsg = '';
 
+// Handle admin reply submission
+if (isset($_POST['submit_reply']) && isset($_POST['message_id'])) {
+    $id = (int)$_POST['message_id'];
+    $reply = trim($_POST['reply']);
+    if ($reply !== '') {
+        $stmt = $db->conn->prepare("UPDATE contact_messages SET reply = ? WHERE id = ?");
+        $stmt->bind_param("si", $reply, $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        if ($success) {
+            setSuccessToast("Reply sent and saved successfully.");
+            header("Location: ?page=messages&view=" . $id);
+            exit();
+        } else {
+            setErrorToast("Failed to save reply.");
+        }
+    } else {
+        setErrorToast("Reply cannot be empty.");
+    }
+}
+
 // Update message status (mark as read/unread)
 if (isset($_POST['update_status'])) {
     $id = (int)$_POST['message_id'];
@@ -144,9 +165,6 @@ if ($viewMode === 'list') {
                     </div>
                 </div>
                 <div class="message-actions">
-                    <a href="mailto:<?php echo htmlspecialchars($message['email']); ?>?subject=RE: <?php echo htmlspecialchars($message['subject']); ?>" class="btn btn-primary">
-                        <i class="fas fa-reply"></i> Reply by Email
-                    </a>
                     <?php if(!empty($message['phone'])): ?>
                     <a href="tel:<?php echo htmlspecialchars($message['phone']); ?>" class="btn btn-outline">
                         <i class="fas fa-phone"></i> Call
@@ -160,6 +178,24 @@ if ($viewMode === 'list') {
                     <?php echo nl2br(htmlspecialchars($message['message'])); ?>
                 </div>
             </div>
+            
+            <!-- Admin Reply Section -->
+            <div class="admin-reply-section" style="margin-top:30px;">
+                <h4>Reply to User</h4>
+                <?php if (!empty($message['reply'])): ?>
+                    <div class="reply-box" style="background:#f6f6f6;padding:15px;border-radius:6px;">
+                        <strong>Reply:</strong><br>
+                        <?php echo nl2br(htmlspecialchars($message['reply'])); ?>
+                    </div>
+                <?php else: ?>
+                    <form method="post" style="margin-top:10px;">
+                        <input type="hidden" name="message_id" value="<?php echo $message['id']; ?>">
+                        <textarea name="reply" rows="4" class="form-control" placeholder="Type your reply here..." required></textarea>
+                        <button type="submit" name="submit_reply" class="btn btn-success" style="margin-top:10px;">Send Reply</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+            <!-- End Admin Reply Section -->
         </div>
     </div>
 </div>

@@ -119,6 +119,10 @@ $orders = $db->getUserOrdersSummary($user_id);
                 <a href="orders.php" class="tab" id="orders-tab">
                     <i class="fas fa-shopping-bag"></i> <span>My Orders</span>
                 </a>
+                <a href="my_messages.php" class="tab" data-tab="messages">
+                    <i class="fas fa-envelope"></i> <span>My Messages</span>
+                    
+                </a>
             </div>
             
             <div class="profile-content">
@@ -454,6 +458,67 @@ $orders = $db->getUserOrdersSummary($user_id);
                                 <div class="orders-pagination">
                                     <a href="orders.php" class="btn btn-secondary">View All Orders</a>
                                 </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Messages Tab -->
+                <div class="tab-content" id="messages-content">
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h2>My Messages</h2>
+                            <p>View your sent messages and see replies from our team.</p>
+                        </div>
+                        <div class="messages-list">
+                            <?php
+                            // Fetch user's contact messages (reuse logic from my_messages.php)
+                            $stmt = $db->conn->prepare("SELECT * FROM contact_messages WHERE user_id = ? ORDER BY created_at DESC");
+                            $stmt->bind_param("i", $user_id);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            $messages = [];
+                            while ($row = $result->fetch_assoc()) {
+                                $messages[] = $row;
+                            }
+                            $stmt->close();
+                            ?>
+                            <?php if (count($messages) === 0): ?>
+                                <div class="empty-state">
+                                    <i class="fas fa-envelope-open"></i>
+                                    <p>You have not sent any messages yet.</p>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($messages as $msg): ?>
+                                    <div class="user-message-card" style="background:#fff;padding:20px;margin-bottom:20px;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,0.05);">
+                                        <div class="msg-header" style="display:flex;justify-content:space-between;align-items:center;">
+                                            <div>
+                                                <strong>Subject:</strong> <?php echo htmlspecialchars($msg['subject']); ?>
+                                            </div>
+                                            <span class="status-badge status-<?php echo $msg['status']; ?>">
+                                                <?php echo ucfirst($msg['status']); ?>
+                                            </span>
+                                        </div>
+                                        <div class="msg-meta" style="color:#888;font-size:0.9em;margin-bottom:10px;">
+                                            <i class="fas fa-calendar-alt"></i> <?php echo date('M d, Y', strtotime($msg['created_at'])); ?>
+                                            <i class="fas fa-clock" style="margin-left:10px;"></i> <?php echo date('h:i A', strtotime($msg['created_at'])); ?>
+                                        </div>
+                                        <div class="msg-content" style="margin-bottom:10px;">
+                                            <strong>Your Message:</strong><br>
+                                            <?php echo nl2br(htmlspecialchars($msg['message'])); ?>
+                                        </div>
+                                        <?php if (!empty($msg['reply'])): ?>
+                                            <div class="msg-reply" style="background:#f6f6f6;padding:12px;border-radius:6px;margin-top:10px;">
+                                                <strong>Reply from Admin/Employee:</strong><br>
+                                                <?php echo nl2br(htmlspecialchars($msg['reply'])); ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="msg-reply" style="color:#888;margin-top:10px;">
+                                                <em>No reply yet.</em>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -885,10 +950,6 @@ $orders = $db->getUserOrdersSummary($user_id);
                     icon: 'fas fa-calendar-times'
                 });
             }
-        });
-    </script>
-</body>
-</html>
         });
     </script>
 </body>

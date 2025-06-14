@@ -68,7 +68,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$formError) {
         try {
             $db = new Database();
-            $result = $db->insertContactMessage($name, $email, $phone, $subject, $message);
+            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+            $result = $db->insertContactMessage($name, $email, $phone, $subject, $message, $user_id);
             if ($result['success']) {
                 $name = $email = $phone = $subject = $message = "";
                 $successMessage = "Your message has been sent successfully! We will contact you soon.";
@@ -510,10 +511,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 });
             }
         });
-    </script>
-</body>
-</html>
-                       
     </script>
 </body>
 </html>

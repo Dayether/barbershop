@@ -48,6 +48,9 @@ if (session_status() === PHP_SESSION_NONE) {
                             <a href="orders.php" class="dropdown-item<?= basename($_SERVER['PHP_SELF']) === 'orders.php' ? ' active' : '' ?>">
                                 <i class="fas fa-shopping-bag"></i> My Orders
                             </a>
+                            <a href="my_messages.php" class="dropdown-item<?= basename($_SERVER['PHP_SELF']) === 'my_messages.php' ? ' active' : '' ?>">
+                                <i class="fas fa-envelope"></i> My Messages
+                            </a>
                             <div class="dropdown-divider"></div>
                             <a href="logout.php" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i> Logout

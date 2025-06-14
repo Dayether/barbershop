@@ -412,6 +412,8 @@ unset($order); // break reference
                 <a href="orders.php" class="tab active">
                     <i class="fas fa-shopping-bag"></i> <span>My Orders</span>
                 </a>
+                 <a href="my_messages.php" class="tab" data-tab="messages">
+                    <i class="fas fa-envelope"></i> <span>My Messages</span>
             </div>
             
             <div class="orders-container">
