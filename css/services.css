@@ -15,7 +15,7 @@
 }
 
 .services-banner h1 {
-  font-size: var(--text-4xl);
+  font-size: 60px;
   margin-bottom: var(--space-md);
   font-weight: 700;
   color: var(--white);
@@ -173,20 +173,6 @@
   background: linear-gradient(to right, transparent, var(--border-light), transparent);
 }
 
-.service-image {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-xl);
-  height: 450px;
-  position: relative;
-  transform: perspective(1000px) rotateY(0deg);
-  transition: transform var(--duration-slow) var(--ease-standard);
-}
-
-.service-item:hover .service-image {
-  transform: perspective(1000px) rotateY(5deg);
-}
-
 .service-info {
   position: relative;
   padding: var(--space-lg);
@@ -196,10 +182,6 @@
   border: 1px solid var(--border-light);
   transform: perspective(1000px) rotateY(0deg);
   transition: transform var(--duration-slow) var(--ease-standard);
-}
-
-.service-item:hover .service-info {
-  transform: perspective(1000px) rotateY(-5deg);
 }
 
 .service-badge {
@@ -283,110 +265,27 @@
 }
 
 /* Before/After Slider */
-.before-after-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-}
-
-.before-after-container:active {
-  cursor: grabbing;
-}
-
-.before-image, .after-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.before-image img, .after-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.after-image {
-  width: 50%;
+.video-container {
+  margin: 20px 0;
+  border: 4px solid var(--primary-color, #a67c52);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-}
-
-.before-after-slider {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 4px;
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateX(-50%);
-  z-index: 2;
-  pointer-events: none;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.before-after-handle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  transform: translate(-50%, -50%);
+  box-shadow: var(--shadow-xl);
+  background: #fff;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-  cursor: ew-resize;
-  transition: background var(--duration-normal) var(--ease-standard), transform var(--duration-normal) var(--ease-standard);
+  height: 400px;
 }
 
-.before-after-handle i {
-  color: var(--secondary-color);
-  font-size: var(--text-xs);
-}
-
-.before-after-handle i:first-child {
-  margin-right: 4px;
-}
-
-.before-after-container:hover .before-after-handle {
-  transform: translate(-50%, -50%) scale(1.1);
-  background: var(--primary-color-dark);
-}
-
-.floating-label {
-  position: absolute;
-  padding: 5px 15px;
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all var(--duration-normal) var(--ease-standard);
-  opacity: 0.9;
-}
-
-.before-label {
-  top: var(--space-md);
-  left: var(--space-md);
-  background-color: rgba(29, 26, 22, 0.8);
-  color: var(--text-light);
-}
-
-.after-label {
-  top: var(--space-md);
-  right: var(--space-md);
-  background: var(--gold-gradient);
-  color: var(--secondary-color);
-}
-
-.before-after-container:hover .floating-label {
-  opacity: 1;
-  transform: translateY(-3px);
+.service-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  padding: var(--space-lg);
+  background: #000;
+  border-radius: var(--radius-lg);
 }
 
 /* Animation keyframes */
@@ -425,6 +324,10 @@
     padding: var(--space-md);
   }
   
+  .service-video {
+    padding: var(--space-md);
+  }
+  
   .service-info h2 {
     font-size: var(--text-2xl);
   }
@@ -437,7 +340,7 @@
   }
   
   .services-banner h1 {
-    font-size: var(--text-3xl);
+    font-size: 35px;
   }
   
   .service-interactive-menu {

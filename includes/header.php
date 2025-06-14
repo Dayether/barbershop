@@ -12,13 +12,6 @@ if (session_status() === PHP_SESSION_NONE) {
                 <img src="uploads/tipuno.jpg" alt="Tipuno Barbershop" class="logo-img">
             </a>
             
-            <!-- Mobile menu toggle -->
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
-            
             <ul class="nav-menu">
                 <li><a href="index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>">Home</a></li>
                 <li><a href="services.php" class="<?= basename($_SERVER['PHP_SELF']) == 'services.php' ? 'active' : '' ?>">Services</a></li>

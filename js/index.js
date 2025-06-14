@@ -64,26 +64,7 @@ function initTestimonialsSlider() {
 /**
  * Initialize parallax effect on scroll
  */
-function initParallaxEffect() {
-    const parallaxImages = document.querySelectorAll('.parallax-image');
-    
-    window.addEventListener('scroll', () => {
-        const scrollPosition = window.pageYOffset;
-        
-        parallaxImages.forEach(image => {
-            const imagePosition = image.offsetTop;
-            const imageHeight = image.offsetHeight;
-            const windowHeight = window.innerHeight;
-            
-            // Check if image is in viewport
-            if (scrollPosition + windowHeight > imagePosition && 
-                scrollPosition < imagePosition + imageHeight) {
-                const parallaxValue = (scrollPosition - imagePosition + windowHeight) * 0.1;
-                image.style.transform = `translateY(${parallaxValue}px)`;
-            }
-        });
-    });
-}
+
 
 /**
  * Initialize hover effects for service cards

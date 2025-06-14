@@ -191,6 +191,7 @@ a:hover {
 
 .btn-primary:hover {
   background: var(--primary-color);
+  color: var(--text-light);
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(200, 166, 86, 0.4);
 }
@@ -215,7 +216,7 @@ a:hover {
 
 .btn-outline:hover {
   background-color: var(--primary-color);
-  color: var(--secondary-color);
+  color: var(--text-light);
   transform: translateY(-3px);
 }
 
@@ -245,18 +246,40 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 1000;
+  min-height: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
+  height: 80px;
+  min-height: 80px;
+  width: 100%;
+  padding: 0;
+}
+
+.navbar a{
+  padding: 0;
+  text-decoration: none;
 }
 
 .logo-img {
-  height: 50px;
+  height: 67px;
   width: auto;
+  display: block;
+  object-fit: contain;
+  transition: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logo-img:hover {
+  transform: none;
+  filter: brightness(1.3);
 }
 
 .nav-menu {
@@ -270,16 +293,20 @@ a:hover {
 
 .nav-menu li a {
   color: var(--dark-color);
-  font-weight: 500;
+  font-weight: 500;              /* Keep consistent font weight */
   position: relative;
   padding: 5px 0;
+  text-decoration: none;
+  display: inline-block;
 }
 
+/* Keep font-weight same; only change color */
 .nav-menu li a:hover,
 .nav-menu li a.active {
   color: var(--primary-color);
 }
 
+/* Underline stays out of document flow */
 .nav-menu li a::after {
   content: '';
   position: absolute;
@@ -289,8 +316,10 @@ a:hover {
   height: 2px;
   background-color: var(--primary-color);
   transition: width 0.3s ease;
+  pointer-events: none;
 }
 
+/* Animate underline without affecting layout */
 .nav-menu li a:hover::after,
 .nav-menu li a.active::after {
   width: 100%;
@@ -573,6 +602,7 @@ a:hover {
 .service-image img {
   width: 100%;
   height: 100%;
+  padding: 15px 0;
   object-fit: cover;
   transition: transform 0.5s ease;
 }
@@ -762,24 +792,6 @@ a:hover {
   transform: scale(1.05);
 }
 
-.product-actions {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-actions {
-  transform: translateY(0);
-}
-
 .quick-view-btn {
   background-color: var(--white);
   color: var(--dark-color);
@@ -895,7 +907,7 @@ a:hover {
 
 .cta .btn-outline:hover {
   background-color: var(--white);
-  color: var(--dark-color);
+  color: var(--text-dark);
 }
 
 .cta-contact-info {
@@ -918,6 +930,10 @@ a:hover {
 .instagram-feed {
   padding: var(--space-xxl) 0;
   background-color: var(--light-bg);
+}
+
+.instagram-feed a {
+  border: var(--primary-color) 3px solid;
 }
 
 .instagram-grid {

@@ -44,11 +44,11 @@ try {
                     <span>Haircuts</span>
                 </div>
                 <div class="menu-item" data-target="beards">
-                    <div class="icon"><i class="fas fa-beard"></i></div>
+                    <div class="icon"><i class="fas fa-face-grin"></i></div>
                     <span>Beard Trims</span>
                 </div>
                 <div class="menu-item" data-target="shaves">
-                    <div class="icon"><i class="fas fa-razor"></i></div>
+                    <div class="icon"><i class="fas fa-user-tie"></i></div>
                     <span>Shaves</span>
                 </div>
                 <div class="menu-item" data-target="packages">
@@ -64,21 +64,11 @@ try {
         <div class="container">
             <div class="services-category active" id="haircuts">
                 <div class="service-item" data-aos="fade-right">
-                    <div class="service-image before-after-container">
-                        <div class="before-image">
-                            <img src="images/before-haircut.jpg" alt="Before Haircut">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-haircut.jpg" alt="After Haircut">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
+                    <div class="service-image video-container">
+                        <video class="service-video" controls poster="images/haircut-thumb.jpg">
+                            <source src="videos/haircut-demo.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
                     </div>
                     <div class="service-info" data-aos="fade-left">
                         <div class="service-badge popular">Most Popular</div>

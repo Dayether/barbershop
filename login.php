@@ -139,19 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <button type="submit" class="btn-auth">Login</button>
                         
-                        <div class="auth-divider">
-                            <span>or continue with</span>
-                        </div>
-                        
-                        <div class="social-buttons">
-                            <button type="button" class="btn-social btn-google">
-                                <i class="fab fa-google"></i> Google
-                            </button>
-                            <button type="button" class="btn-social btn-facebook">
-                                <i class="fab fa-facebook-f"></i> Facebook
-                            </button>
-                        </div>
-                        
                         <div class="auth-footer">
                             <p>Don't have an account? <a href="register.php">Register</a></p>
                         </div>

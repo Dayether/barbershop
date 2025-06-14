@@ -156,7 +156,7 @@ require_once 'database.php';
                     </div>
                     <div class="service-content">
                         <div class="service-icon">
-                            <i class="fas fa-beard"></i>
+                            <i class="fas fa-face-grin-stars"></i>
                         </div>
                         <h3>Beard Sculpting</h3>
                         <p>Meticulous beard trimming and shaping for a well-groomed appearance.</p>
@@ -203,11 +203,11 @@ require_once 'database.php';
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="testimonial-text">"Absolutely the best barbershop experience! Michael understood exactly what style I wanted and executed it perfectly. The hot towel treatment was amazing."</p>
+                    <p class="testimonial-text">"Absolutely the best barbershop experience! JC Rocamora understood exactly what style I wanted and executed it perfectly. The hot towel treatment was amazing."</p>
                     <div class="testimonial-author">
-                        <img src="images/testimonials/client1.jpg" alt="James Wilson" class="author-image">
+                        <img src="images/testimonials/dayet.png" alt="James Wilson" class="author-image">
                         <div class="author-info">
-                            <h4>James Wilson</h4>
+                            <h4>Dayether Alcantara</h4>
                             <span>Loyal Customer</span>
                         </div>
                     </div>
@@ -223,9 +223,9 @@ require_once 'database.php';
                     </div>
                     <p class="testimonial-text">"I've been going to Tipuno for over a year now. The attention to detail and consistent quality keeps me coming back. Their beard oil recommendations changed my grooming routine."</p>
                     <div class="testimonial-author">
-                        <img src="images/testimonials/client2.jpg" alt="Robert Davis" class="author-image">
+                        <img src="images/testimonials/jims.png" alt="Robert Davis" class="author-image">
                         <div class="author-info">
-                            <h4>Robert Davis</h4>
+                            <h4>James Legaspi</h4>
                             <span>Regular Client</span>
                         </div>
                     </div>
@@ -241,9 +241,9 @@ require_once 'database.php';
                     </div>
                     <p class="testimonial-text">"First-time visitor and definitely won't be my last. The ambiance, professionalism, and quality of service were all exceptional. My new go-to barbershop."</p>
                     <div class="testimonial-author">
-                        <img src="images/testimonials/client3.jpg" alt="Thomas Brown" class="author-image">
+                        <img src="images/testimonials/timo.png" alt="Thomas Brown" class="author-image">
                         <div class="author-info">
-                            <h4>Thomas Brown</h4>
+                            <h4>Timothy Baracael</h4>
                             <span>New Customer</span>
                         </div>
                     </div>
@@ -266,12 +266,6 @@ require_once 'database.php';
                     <div class="product-badge bestseller">Bestseller</div>
                     <div class="product-image-wrapper">
                         <img src="images/product1.jpg" alt="Premium Pomade">
-                        <div class="product-actions">
-                            <button class="quick-view-btn" data-product="1"><i class="fas fa-eye"></i> Quick View</button>
-                            <button class="btn-add-to-cart" data-id="1" data-name="Premium Pomade" data-price="15" data-image="images/product1.jpg">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </button>
-                        </div>
                     </div>
                     <div class="product-details">
                         <h3>Premium Pomade</h3>
@@ -291,12 +285,6 @@ require_once 'database.php';
                     <div class="product-badge new">New</div>
                     <div class="product-image-wrapper">
                         <img src="images/product2.jpg" alt="Luxury Beard Oil">
-                        <div class="product-actions">
-                            <button class="quick-view-btn" data-product="2"><i class="fas fa-eye"></i> Quick View</button>
-                            <button class="btn-add-to-cart" data-id="2" data-name="Luxury Beard Oil" data-price="20" data-image="images/product2.jpg">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </button>
-                        </div>
                     </div>
                     <div class="product-details">
                         <h3>Luxury Beard Oil</h3>
@@ -315,12 +303,6 @@ require_once 'database.php';
                 <div class="product-card" data-aos="fade-up" data-aos-delay="300">
                     <div class="product-image-wrapper">
                         <img src="images/product3.jpg" alt="Premium Shaving Cream">
-                        <div class="product-actions">
-                            <button class="quick-view-btn" data-product="3"><i class="fas fa-eye"></i> Quick View</button>
-                            <button class="btn-add-to-cart" data-id="3" data-name="Premium Shaving Cream" data-price="10" data-image="images/product3.jpg">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </button>
-                        </div>
                     </div>
                     <div class="product-details">
                         <h3>Premium Shaving Cream</h3>
@@ -379,38 +361,32 @@ require_once 'database.php';
             </div>
             
             <div class="instagram-grid">
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta1.jpg" alt="Instagram Post">
+                <a href="https://www.instagram.com/p/DHXUurxoHUQ/?fbclid=IwY2xjawK557BleHRuA2FlbQIxMABicmlkETFjbFlOaVEwQ2dheUZXNDB1AR552j1BvF63ozwdI5YyDHHJ2FPFEioCwIv17eMTXeINie926UW3JGvuqbCoyA_aem_6M1t4jZ2tSwzcy5I8bHCdw" class="instagram-item">
+                    <img src="images/instagram/insta-1.png" alt="Instagram Post">
                     <div class="instagram-overlay">
                         <i class="fab fa-instagram"></i>
                     </div>
                 </a>
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta2.jpg" alt="Instagram Post">
+                <a href="https://www.instagram.com/p/DG67qNrtecD/?fbclid=IwY2xjawK56MtleHRuA2FlbQIxMABicmlkETFjbFlOaVEwQ2dheUZXNDB1AR4Upp4BiSEcg6miiZ6B6r_Uzi1I5qogOcuksu3vFvUHykC5Pqc36ZImI5PbCg_aem_N8_NgAuAPYlAvf5zdLA6kg" class="instagram-item">
+                    <img src="images/instagram/insta-2.png" alt="Instagram Post">
                     <div class="instagram-overlay">
                         <i class="fab fa-instagram"></i>
                     </div>
                 </a>
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta3.jpg" alt="Instagram Post">
+                <a href="https://www.instagram.com/p/DF6jxIghttd/?fbclid=IwY2xjawK56WdleHRuA2FlbQIxMABicmlkETFjbFlOaVEwQ2dheUZXNDB1AR4_mdrrsiB-XWFnRKMcP79K16pnFWdtHv_Es0tXEE_ZK4ywGp0ZJbvnnceU-w_aem_UH9LI5J-TTuTW3Lm9GaZXg" class="instagram-item">
+                    <img src="images/instagram/insta-3.png" alt="Instagram Post">
                     <div class="instagram-overlay">
                         <i class="fab fa-instagram"></i>
                     </div>
                 </a>
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta4.jpg" alt="Instagram Post">
+                <a href="https://www.instagram.com/p/DFl9ZwTvd4v/?fbclid=IwY2xjawK56jFleHRuA2FlbQIxMABicmlkETFjbFlOaVEwQ2dheUZXNDB1AR6_7Oqnw2Y6lnVfCumsAuBbWlmmNwbcxTXXsuhr30Rjiov2TiHMYFifqQAJlw_aem_r9oUNoZjyVlAjg0nQaYLIQ" class="instagram-item">
+                    <img src="images/instagram/insta-4.png" alt="Instagram Post">
                     <div class="instagram-overlay">
                         <i class="fab fa-instagram"></i>
                     </div>
                 </a>
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta5.jpg" alt="Instagram Post">
-                    <div class="instagram-overlay">
-                        <i class="fab fa-instagram"></i>
-                    </div>
-                </a>
-                <a href="https://instagram.com" class="instagram-item">
-                    <img src="images/instagram/insta6.jpg" alt="Instagram Post">
+                <a href="https://www.instagram.com/p/C_E0n_WhCfL/?fbclid=IwY2xjawK56oxleHRuA2FlbQIxMABicmlkETFjbFlOaVEwQ2dheUZXNDB1AR7mwsa0Ckm1PVBzv-6B0uVy8RdCvFFu43vPbEmE1G-b-EX7JRw-BgrcQ_Abug_aem_dVoEcxGnNpfA3DhEJloBCg" class="instagram-item">
+                    <img src="images/instagram/insta-5.png" alt="Instagram Post">
                     <div class="instagram-overlay">
                         <i class="fab fa-instagram"></i>
                     </div>

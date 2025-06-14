@@ -8,7 +8,7 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <div class="logo-container">
-                        <img src="images/logo.png" alt="Tipuno Barbershop" class="footer-logo-img">
+                        <img src="images/logo2.jpg" alt="Tipuno Barbershop" class="footer-logo-img">
                     </div>
                     <p class="brand-description">Premium grooming services for the distinguished gentleman since 1995. Excellence in every detail.</p>
                     <div class="gold-divider"></div>
