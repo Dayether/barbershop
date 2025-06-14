@@ -327,15 +327,7 @@ function old($key, $default = '') {
                         </div>
                     </div>
                     
-                    <div class="coupon-box">
-                        <h3>Have a Promo Code?</h3>
-                        <div class="coupon-form">
-                            <input type="text" placeholder="Enter promo code" id="promo-code">
-                            <button type="button" id="apply-promo">
-                                <i class="fas fa-tag"></i> Apply
-                            </button>
-                        </div>
-                    </div>
+                   
                 </div>
             </div>
         </div>
