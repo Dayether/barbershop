@@ -1491,7 +1491,7 @@ class Database {
 
     // Get user by ID
     public function getUserById($user_id) {
-        $stmt = $this->conn->prepare("SELECT user_id, first_name, last_name, email, account_type FROM users WHERE user_id = ?");
+        $stmt = $this->conn->prepare("SELECT * FROM users WHERE user_id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -2033,60 +2033,134 @@ class Database {
         return $result->fetch_assoc();
     }
 
-    public function createUser($first_name, $last_name, $email, $password, $account_type) {
-        // Only allow one Super Admin
-        if ($account_type == 2) {
-            $result = $this->conn->query("SELECT COUNT(*) as cnt FROM users WHERE account_type = 2");
-            $row = $result->fetch_assoc();
-            if ($row['cnt'] > 0) {
-                return ['success' => false, 'error_message' => 'There can only be one Super Admin.'];
+    public function createService($data) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            // Handle image upload if provided
+            $imagePath = '';
+            if (!empty($data['image']) && isset($data['image']['tmp_name']) && is_uploaded_file($data['image']['tmp_name'])) {
+                $uploadDir = 'uploads/services/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $ext = pathinfo($data['image']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('service_', true) . '.' . $ext;
+                $imagePath = $uploadDir . $filename;
+                move_uploaded_file($data['image']['tmp_name'], $imagePath);
             }
+
+            $stmt = $this->conn->prepare("INSERT INTO services (name, description, duration, price, image, active) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param(
+                "ssidsi",
+                $data['name'],
+                $data['description'],
+                $data['duration'],
+                $data['price'],
+                $imagePath,
+                $data['active']
+            );
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
         }
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $this->conn->prepare("INSERT INTO users (first_name, last_name, email, password, account_type, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-        $stmt->bind_param("ssssi", $first_name, $last_name, $email, $hashed_password, $account_type);
-        $success = $stmt->execute();
-        $error_message = $success ? '' : $stmt->error;
-        $stmt->close();
-        return ['success' => $success, 'error_message' => $error_message];
+        return $result;
     }
 
-    // Update user (Super Admin only)
-    public function updateUser($user_id, $first_name, $last_name, $email, $account_type) {
-        // Prevent more than one Super Admin
-        if ($account_type == 2) {
-            $result = $this->conn->query("SELECT COUNT(*) as cnt FROM users WHERE account_type = 2 AND user_id != $user_id");
-            $row = $result->fetch_assoc();
-            if ($row['cnt'] > 0) {
-                return ['success' => false, 'error_message' => 'There can only be one Super Admin.'];
+    public function updateService($data) {
+        $result = ['success' => false, 'error_message' => '', 'image' => ''];
+        try {
+            // Handle image upload if provided
+            $imagePath = '';
+            if (!empty($data['image']) && isset($data['image']['tmp_name']) && is_uploaded_file($data['image']['tmp_name'])) {
+                $uploadDir = '../uploads/services/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $ext = pathinfo($data['image']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('service_', true) . '.' . $ext;
+                $imagePath = $uploadDir . $filename;
+                move_uploaded_file($data['image']['tmp_name'], $imagePath);
+            } else {
+                // Fetch current image if no new image uploaded
+                $current = $this->getServiceById($data['service_id']);
+                $imagePath = $current ? $current['image'] : '';
             }
+
+            if ($imagePath) {
+                $stmt = $this->conn->prepare("UPDATE services SET name=?, description=?, duration=?, price=?, image=?, active=? WHERE service_id=?");
+                $stmt->bind_param(
+                    "ssidsii",
+                    $data['name'],
+                    $data['description'],
+                    $data['duration'],
+                    $data['price'],
+                    $imagePath,
+                    $data['active'],
+                    $data['service_id']
+                );
+            } else {
+                $stmt = $this->conn->prepare("UPDATE services SET name=?, description=?, duration=?, price=?, active=? WHERE service_id=?");
+                $stmt->bind_param(
+                    "ssidsi",
+                    $data['name'],
+                    $data['description'],
+                    $data['duration'],
+                    $data['price'],
+                    $data['active'],
+                    $data['service_id']
+                );
+            }
+
+            if ($stmt->execute()) {
+                $result['success'] = true;
+                $result['image'] = $imagePath;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
         }
-        $stmt = $this->conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, account_type = ? WHERE user_id = ?");
-        $stmt->bind_param("ssssi", $first_name, $last_name, $email, $account_type, $user_id);
-        $success = $stmt->execute();
-        $error_message = $success ? '' : $stmt->error;
-        $stmt->close();
-        return ['success' => $success, 'error_message' => $error_message];
+        return $result;
     }
 
-    // Delete user (Super Admin only, cannot delete only Super Admin)
-    public function deleteUser($user_id) {
-        // Prevent deleting the only Super Admin
-        $result = $this->conn->query("SELECT account_type FROM users WHERE user_id = $user_id");
-        $row = $result->fetch_assoc();
-        if ($row && $row['account_type'] == 2) {
-            $result2 = $this->conn->query("SELECT COUNT(*) as cnt FROM users WHERE account_type = 2");
-            $row2 = $result2->fetch_assoc();
-            if ($row2['cnt'] <= 1) {
-                return ['success' => false, 'error_message' => 'Cannot delete the only Super Admin.'];
+    public function deleteService($service_id) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM services WHERE service_id = ?");
+            $stmt->bind_param("i", $service_id);
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
             }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
         }
-        $stmt = $this->conn->prepare("DELETE FROM users WHERE user_id = ?");
-        $stmt->bind_param("i", $user_id);
-        $success = $stmt->execute();
-        $error_message = $success ? '' : $stmt->error;
-        $stmt->close();
-        return ['success' => $success, 'error_message' => $error_message];
+        return $result;
+    }
+
+    public function updateServiceStatus($service_id, $active) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            $stmt = $this->conn->prepare("UPDATE services SET active = ? WHERE service_id = ?");
+            $stmt->bind_param("ii", $active, $service_id);
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
+        }
+        return $result;
     }
 
     public function getActiveServices() {
