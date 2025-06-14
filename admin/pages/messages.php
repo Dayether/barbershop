@@ -50,13 +50,7 @@ if (isset($_GET['view'])) {
     $viewMode = 'view';
     $id = (int)$_GET['view'];
     $message = $db->getMessageById($id);
-    if ($message) {
-        if ($message['status'] === 'new') {
-            $db->updateMessageStatus($id, 'read');
-            // Re-fetch to get updated status
-            $message = $db->getMessageById($id);
-        }
-    } else {
+    if (!$message) {
         setErrorToast("Message not found.");
         $viewMode = 'list';
     }
@@ -166,9 +160,7 @@ if ($viewMode === 'list') {
                 </div>
                 <div class="message-actions">
                     <?php if(!empty($message['phone'])): ?>
-                    <a href="tel:<?php echo htmlspecialchars($message['phone']); ?>" class="btn btn-outline">
-                        <i class="fas fa-phone"></i> Call
-                    </a>
+                   
                     <?php endif; ?>
                 </div>
             </div>
@@ -183,9 +175,18 @@ if ($viewMode === 'list') {
             <div class="admin-reply-section" style="margin-top:30px;">
                 <h4>Reply to User</h4>
                 <?php if (!empty($message['reply'])): ?>
-                    <div class="reply-box" style="background:#f6f6f6;padding:15px;border-radius:6px;">
-                        <strong>Reply:</strong><br>
-                        <?php echo nl2br(htmlspecialchars($message['reply'])); ?>
+                    <div class="reply-box enhanced-reply-box" style="background: linear-gradient(90deg, #f8fafc 80%, #e3f2fd 100%); border-left: 5px solid #2196f3; box-shadow: 0 2px 8px rgba(33,150,243,0.07); padding: 18px 22px; border-radius: 8px; margin-top: 10px; display: flex; align-items: flex-start; gap: 15px;">
+                        <div style="color: #2196f3; font-size: 1.7em; margin-right: 10px;">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: #1565c0; margin-bottom: 4px; letter-spacing: 0.5px;">
+                                <i class="fas fa-reply"></i> Admin Reply
+                            </div>
+                            <div style="color: #333; font-size: 1.08em; line-height: 1.7;">
+                                <?php echo nl2br(htmlspecialchars($message['reply'])); ?>
+                            </div>
+                        </div>
                     </div>
                 <?php else: ?>
                     <form method="post" style="margin-top:10px;">
