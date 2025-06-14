@@ -8,9 +8,9 @@ require_once 'database.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tipuno Barbershop - Premium Grooming Experience</title>
-    <link rel="stylesheet" href="css/footer.css">
     <meta name="description" content="Experience premium men's grooming at Tipuno Barbershop. Expert haircuts, beard trims, and hot towel shaves in a relaxed atmosphere.">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/hamburger.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/animations.css">

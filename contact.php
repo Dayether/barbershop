@@ -91,13 +91,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us - Tipuno Barbershop</title>
-    <link rel="stylesheet" href="css/footer.css">
     <meta name="description" content="Contact Tipuno Barbershop for appointments, questions, or feedback. Our professional team is ready to assist you with all your grooming needs.">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/hamburger.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/contact.css">
+    <link rel="stylesheet" href="css/effects.css">
+    <link rel="stylesheet" href="css/color-themes.css">
     <link rel="stylesheet" href="css/banner-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -112,7 +114,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php include 'includes/header.php'; ?>
 
     <!-- Page Banner -->
-    <section class="page-banner contact-banner">
+    <section class="page-banner services-banner parallax-background">
+        <div class="banner-overlay gradient-bg"></div>
         <div class="container">
             <h1 data-aos="fade-up">Get in Touch With Us</h1>
             <p data-aos="fade-up" data-aos-delay="100">Have questions or want to book an appointment? Reach out to us and we'll get back to you as soon as possible.</p>

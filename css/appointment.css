@@ -1,9 +1,80 @@
 /* Appointment Page Styles */
 
 /* Banner Styles */
+/* Banner Styles */
+:root {
+    --primary-color: #d4af37; /* Rich gold */
+    --primary-dark: #b89530;
+    --secondary-color: #1a1a1a; /* Deep black */
+    --text-light: #ffffff;
+    --space-md: 24px;
+    --space-lg: 40px;
+    --text-lg: 1.25rem;
+    --text-light: #fff;
+    --white: #fff;
+    --ease-decelerate: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .appointment-banner {
     background: linear-gradient(rgba(18, 18, 18, 0.85), rgba(18, 18, 18, 0.85)), 
-                url('../uploads/videoplayback.mp4') center/cover no-repeat;
+                url('../uploads/banner.jpg') center/cover no-repeat;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+/* Fade-in animation for h1 and p in the banner */
+.appointment-banner h1 {
+    font-size: 60px;
+    margin-bottom: var(--space-md);
+    font-weight: 700;
+    color: var(--primary-color);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    animation: fadeInUp 1s var(--ease-decelerate);
+}
+
+.appointment-banner p {
+    font-size: var(--text-lg, 1.25rem);
+    max-width: 600px;
+    margin: 0 auto var(--space-lg, 40px);
+    color: var(--brand-white, #fff);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments for banner */
+@media (max-width: 768px) {
+    .appointment-banner {
+        height: auto;
+        padding: 50px 0;
+    }
+    .appointment-banner h1 {
+        font-size: 35px;
+    }
+}
+
+@media (max-width: 576px) {
+    .appointment-banner h1 {
+        font-size: 2rem;
+    }
+    .appointment-banner p {
+        font-size: 1rem;
+    }
 }
 
 /* Appointment Section Styles */

@@ -50,18 +50,20 @@ if (count($products) == 0) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="css/footer.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop - Tipuno Barbershop</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/shop.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/cart-styles.css">
     <link rel="stylesheet" href="css/cart-sidebar-pro.css">
     <link rel="stylesheet" href="css/shop-checkout-enhancements.css">
     <link rel="stylesheet" href="css/cart-notification.css">
-    <link rel="stylesheet" href="css/banner-styles.css">
+    <link rel="stylesheet" href="css/effects.css">
+    <link rel="stylesheet" href="css/banner-style.css">
+    <link rel="stylesheet" href="css/color-themes.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -69,10 +71,11 @@ if (count($products) == 0) {
     <?php include 'includes/header.php'; ?>
 
     <!-- Page Banner -->
-    <section class="page-banner shop-banner">
+    <section class="page-banner services-banner parallax-background">
+        <div class="banner-overlay gradient-bg"></div>
         <div class="container">
-            <h1>Premium Grooming Products</h1>
-            <p>The same professional products we use in our barbershop, now available for home use</p>
+            <h1 data-aos="fade-up" class="text-gradient">Premium Grooming Products</h1>
+            <p data-aos="fade-up" data-aos-delay="200" class="aos-init aos-animate">The same professional products we use in our barbershop, now available for home use</p>
         </div>
     </section>
 

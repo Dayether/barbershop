@@ -130,24 +130,44 @@ header {
 
 /* Page Banner */
 .contact-banner {
-    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('../images/contact-banner.jpg');
-    background-size: cover;
-    background-position: center;
-    padding: 160px 0 80px;
-    text-align: center;
-    color: white;
+    background: linear-gradient(rgba(29, 26, 22, 0.8), #1d1a16cc), 
+              url('../uploads/banner.jpg') center/cover no-repeat;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  position: relative;
 }
 
 .contact-banner h1 {
-    margin-bottom: 20px;
-    font-family: 'Playfair Display', serif;
-    font-size: 48px;
+    font-size: 60px;
+  margin-bottom: var(--space-md);
+  font-weight: 700;
+  color: var(--primary-color);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 1s var(--ease-decelerate);
 }
 
 .contact-banner p {
-    font-size: 18px;
-    max-width: 600px;
-    margin: 0 auto;
+    font-size: var(--text-lg);
+  max-width: 600px;
+  margin: 0 auto var(--space-lg);
+  color: var(--text-light);
+  opacity: 0.9;
+  animation: fadeInUp 1s var(--ease-decelerate) 0.2s forwards;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Contact Section */
@@ -395,6 +415,7 @@ select.form-control option {
 
 .mini-cta h2 {
     font-family: 'Playfair Display', serif;
+    color: var(--primary-color);
     font-size: 36px;
     margin-bottom: 20px;
 }
@@ -406,145 +427,3 @@ select.form-control option {
     color: #aaa;
 }
 
-/* Footer */
-footer {
-    background-color: var(--primary-color);
-    color: #aaa;
-    padding: 60px 0 20px;
-}
-
-.footer-content {
-    display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
-}
-
-.footer-column {
-    flex: 1;
-    min-width: 200px;
-    padding: 0 15px;
-    margin-bottom: 30px;
-}
-
-.footer-column h4 {
-    color: white;
-    font-size: 18px;
-    margin-bottom: 20px;
-    position: relative;
-    padding-bottom: 10px;
-}
-
-.footer-column h4:after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 30px;
-    height: 2px;
-    background: var(--secondary-color);
-}
-
-.footer-links {
-    list-style: none;
-}
-
-.footer-links li {
-    margin-bottom: 10px;
-}
-
-.footer-links a {
-    color: #aaa;
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-.footer-links a:hover {
-    color: var(--secondary-color);
-    padding-left: 5px;
-}
-
-.copyright {
-    text-align: center;
-    padding-top: 20px;
-    border-top: 1px solid #333;
-    font-size: 14px;
-}
-
-.copyright a {
-    color: var(--secondary-color);
-    text-decoration: none;
-}
-
-/* Responsive Styles */
-@media (max-width: 992px) {
-    .contact-info, .contact-form-container {
-        flex: 100%;
-    }
-    
-    .contact-banner h1 {
-        font-size: 36px;
-    }
-    
-    .contact-form {
-        padding: 30px;
-    }
-}
-
-@media (max-width: 768px) {
-    .nav-links {
-        display: none;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        background: var(--primary-color);
-        padding: 20px;
-        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-    }
-    
-    .nav-links.active {
-        display: flex;
-    }
-    
-    .nav-links li {
-        margin: 15px 0;
-    }
-    
-    .hamburger {
-        display: block;
-    }
-    
-    .hero h1 {
-        font-size: 32px;
-    }
-    
-    .hero p {
-        font-size: 16px;
-    }
-    
-    .section-title {
-        font-size: 28px;
-    }
-    
-    .contact-banner h1 {
-        font-size: 30px;
-    }
-    
-    .contact-banner p {
-        font-size: 16px;
-    }
-    
-    .mini-cta h2 {
-        font-size: 28px;
-    }
-    
-    .map-container {
-        height: 350px;
-    }
-    
-    .form-row .form-group {
-        flex: 100%;
-        margin-bottom: 20px;
-    }
-}

@@ -66,7 +66,7 @@ try {
                 <div class="service-item" data-aos="fade-right">
                     <div class="service-image video-container">
                         <video class="service-video" controls poster="images/haircut-thumb.jpg">
-                            <source src="videos/haircut-demo.mp4" type="video/mp4">
+                            <source src="uploads/haircuts-video.mp4" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     </div>
@@ -93,21 +93,8 @@ try {
             <!-- Beard Trims Section -->
             <div class="services-category" id="beards">
                 <div class="service-item" data-aos="fade-right">
-                    <div class="service-image before-after-container">
-                        <div class="before-image">
-                            <img src="images/before-beard-trim.jpg" alt="Before Beard Trim">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-beard-trim.jpg" alt="After Beard Trim">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
+                    <div class="service-image video-container">
+                        <img src="uploads/beard-trims2.jpg" alt="Beard Shape & Trim">
                     </div>
                     <div class="service-info" data-aos="fade-left">
                         <div class="service-badge popular">Most Popular</div>
@@ -143,21 +130,8 @@ try {
                         </ul>
                         <a href="appointment.php" class="btn btn-primary pulse-button">Book This Service</a>
                     </div>
-                    <div class="service-image before-after-container" data-aos="fade-left">
-                        <div class="before-image">
-                            <img src="images/before-beard-luxury.jpg" alt="Before Luxury Beard Treatment">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-beard-luxury.jpg" alt="After Luxury Beard Treatment">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
+                    <div class="service-image video-container">
+                        <img src="uploads/beard-trims1.jpg" alt="Luxury Beard Sculpting">
                     </div>
                 </div>
             </div>
@@ -165,21 +139,8 @@ try {
             <!-- Shaves Section -->
             <div class="services-category" id="shaves">
                 <div class="service-item" data-aos="fade-right">
-                    <div class="service-image before-after-container">
-                        <div class="before-image">
-                            <img src="images/before-shave.jpg" alt="Before Traditional Shave">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-shave.jpg" alt="After Traditional Shave">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
+                    <div class="service-image video-container">
+                        <img src="uploads/shaves1.png" alt="Classic Straight Razor Shave">
                     </div>
                     <div class="service-info" data-aos="fade-left">
                         <h2 class="text-gradient">Classic Straight Razor Shave</h2>
@@ -215,19 +176,8 @@ try {
                         <a href="appointment.php" class="btn btn-primary pulse-button">Book This Service</a>
                     </div>
                     <div class="service-image before-after-container" data-aos="fade-left">
-                        <div class="before-image">
-                            <img src="images/before-royal-shave.jpg" alt="Before Royal Shave">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-royal-shave.jpg" alt="After Royal Shave">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
+                        <div class="service-image video-container">
+                            <img src="uploads/shaves2.jpg" alt="Executive Royal Shave">
                         </div>
                     </div>
                 </div>
@@ -236,21 +186,8 @@ try {
             <!-- Packages Section -->
             <div class="services-category" id="packages">
                 <div class="service-item" data-aos="fade-right">
-                    <div class="service-image before-after-container">
-                        <div class="before-image">
-                            <img src="images/before-classic-package.jpg" alt="Before Classic Package">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-classic-package.jpg" alt="After Classic Package">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
+                    <div class="service-image video-container">
+                        <img src="uploads/packages2.jpg" alt="Executive Royal Shave">
                     </div>
                     <div class="service-info" data-aos="fade-left">
                         <div class="service-badge popular">Most Popular</div>
@@ -291,19 +228,8 @@ try {
                         <a href="appointment.php" class="btn btn-primary pulse-button">Book This Service</a>
                     </div>
                     <div class="service-image before-after-container" data-aos="fade-left">
-                        <div class="before-image">
-                            <img src="images/before-vip-package.jpg" alt="Before VIP Package">
-                            <div class="floating-label before-label">Before</div>
-                        </div>
-                        <div class="after-image">
-                            <img src="images/after-vip-package.jpg" alt="After VIP Package">
-                            <div class="floating-label after-label">After</div>
-                        </div>
-                        <div class="before-after-slider">
-                            <div class="before-after-handle">
-                                <i class="fas fa-chevron-left"></i>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
+                        <div class="service-image video-container">
+                            <img src="uploads/package.jpg" alt="Executive Royal Shave">
                         </div>
                     </div>
                 </div>

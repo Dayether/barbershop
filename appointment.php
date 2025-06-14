@@ -43,11 +43,13 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Appointment - Tipuno Barbershop</title>
-    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/appointment.css">
     <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/effects.css">
     <link rel="stylesheet" href="css/banner-styles.css">
+    <link rel="stylesheet" href="css/color-themes.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -60,10 +62,11 @@ try {
     <?php include 'includes/header.php'; ?>
 
     <!-- Page Banner -->
-    <section class="page-banner appointment-banner">
+    <section class="page-banner services-banner parallax-background">
+        <div class="banner-overlay gradient-bg"></div>
         <div class="container">
-            <h1>Book Your Appointment</h1>
-            <p>Welcome back, 
+            <h1 data-aos="fade-up" class="text-gradient" style="background-size: 200%; background-position: left center;">Book Your Appointment</h1>
+            <p data-aos="fade-up" data-aos-delay="200">Welcome back, 
                 <?php
                     if (isset($_SESSION['user'])) {
                         $user = $_SESSION['user'];
