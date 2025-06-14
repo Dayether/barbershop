@@ -138,7 +138,7 @@ if (isset($_GET['new'])) {
                         <div class="image-upload-container">
                             <?php if (!empty($barber['image'])): ?>
                                 <div class="current-image">
-                                    <img src="../<?php echo htmlspecialchars($barber['image']); ?>" alt="<?php echo htmlspecialchars($barber['name']); ?>" id="imagePreview">
+                                    <img src="<?php echo htmlspecialchars($barber['image']); ?>" alt="<?php echo htmlspecialchars($barber['name']); ?>" id="imagePreview">
                                 </div>
                             <?php else: ?>
                                 <div class="no-image">

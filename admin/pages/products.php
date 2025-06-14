@@ -36,7 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     $result = $db->updateProduct($updateData);
     if ($result['success']) {
         setSuccessToast("Product updated successfully!");
-        $viewMode = 'list';
+        // Redirect to edit page to refresh image and data
+        header('Location: ?page=products&edit=' . urlencode($updateData['product_id']) . '&updated=1');
+        exit;
     } else {
         setErrorToast($result['error_message']);
     }
@@ -150,16 +152,16 @@ if (isset($_GET['new'])) {
                         <div class="image-upload-container">
                             <?php if (!empty($product['image'])): ?>
                                 <div class="current-image">
-                                    <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" id="imagePreview">
+                                    <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" id="imagePreview-edit-<?php echo $product['product_id']; ?>">
                                 </div>
                             <?php else: ?>
-                                <div class="no-image">
+                                <div class="no-image" id="imagePreview-edit-<?php echo $product['product_id']; ?>">
                                     <i class="fas fa-image"></i>
                                     <p>No image available</p>
                                 </div>
                             <?php endif; ?>
                             
-                            <input type="file" id="image" name="image" class="form-control-file image-upload" accept="image/*" data-preview="imagePreview">
+                            <input type="file" id="image" name="image" class="form-control-file image-upload" accept="image/*" data-preview="imagePreview-edit-<?php echo $product['product_id']; ?>">
                             <label for="image" class="btn btn-outline btn-sm mt-2">
                                 <i class="fas fa-upload"></i> Change Image
                             </label>
