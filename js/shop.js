@@ -236,6 +236,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = document.createElement('div');
             modal.classList.add('quick-view-modal');
             modal.innerHTML = `
+                <style>
+                .btn-back-modal {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: #2a9d8f;
+                    color: #fff;
+                    border: none;
+                    border-radius: 24px;
+                    padding: 10px 24px;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin-top: 18px;
+                    transition: background 0.2s;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                }
+                .btn-back-modal:hover {
+                    background: #21867a;
+                }
+                </style>
                 <div class="quick-view-content">
                     <button class="close-modal">&times;</button>
                     <div class="quick-view-image">
@@ -245,14 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h2>${productName}</h2>
                         <div class="quick-view-price">${productPrice}</div>
                         <p>${productDesc}</p>
-                        <button class="btn-add-to-cart-modal" 
-                                data-id="${addToCartBtn.getAttribute('data-id')}"
-                                data-name="${addToCartBtn.getAttribute('data-name')}"
-                                data-price="${addToCartBtn.getAttribute('data-price')}"
-                                data-image="${addToCartBtn.getAttribute('data-image')}"
-                                ${addToCartBtn.hasAttribute('disabled') ? 'disabled' : ''}>
-                            ${addToCartBtn.textContent}
-                        </button>
+                        <button class="btn-back-modal"><i class='fas fa-arrow-left'></i> Back</button>
                     </div>
                 </div>
             `;
@@ -264,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 modal.classList.add('show');
             }, 10);
             
-            // Close modal
+            // Close modal (X button)
             modal.querySelector('.close-modal').addEventListener('click', () => {
                 modal.classList.remove('show');
                 setTimeout(() => {
@@ -272,74 +286,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.classList.remove('modal-open');
                 }, 300);
             });
-            
-            // Add to cart from modal
-            modal.querySelector('.btn-add-to-cart-modal').addEventListener('click', function() {
-                const productId = parseInt(this.getAttribute('data-id'));
-                const productName = this.getAttribute('data-name');
-                const productPrice = parseFloat(this.getAttribute('data-price'));
-                const productImage = this.getAttribute('data-image');
-                
-                const existingItem = cart.find(item => item.id === productId);
-                
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                } else {
-                    cart.push({
-                        id: productId,
-                        name: productName,
-                        price: productPrice,
-                        image: productImage,
-                        quantity: 1
-                    });
-                }
-                
-                // Use global cart and updateCart
-                updateCart(cart);
-                
-                // Update button
-                this.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
-                this.classList.add('added');
-                
-                // Also update the original button
-                addToCartBtn.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
-                addToCartBtn.classList.add('added');
-                
-                // Reset both buttons after delay
+            // Back button closes modal
+            modal.querySelector('.btn-back-modal').addEventListener('click', () => {
+                modal.classList.remove('show');
                 setTimeout(() => {
-                    this.innerHTML = 'Add to Cart';
-                    this.classList.remove('added');
-                    addToCartBtn.innerHTML = 'Add to Cart';
-                    addToCartBtn.classList.remove('added');
-                }, 2000);
-                
-                // Close modal and redirect to checkout option
-                const checkoutPrompt = document.createElement('div');
-                checkoutPrompt.classList.add('checkout-prompt');
-                checkoutPrompt.innerHTML = `
-                    <div class="checkout-prompt-content">
-                        <i class="fas fa-check-circle"></i>
-                        <p>Item added to your cart</p>
-                        <div class="checkout-prompt-buttons">
-                            <button class="continue-shopping">Continue Shopping</button>
-                            <button class="go-to-checkout">Proceed to Checkout</button>
-                        </div>
-                    </div>
-                `;
-                
-                modal.querySelector('.quick-view-content').appendChild(checkoutPrompt);
-                
-                checkoutPrompt.querySelector('.continue-shopping').addEventListener('click', () => {
-                    modal.classList.remove('show');
-                    setTimeout(() => {
-                        modal.remove();
-                        document.body.classList.remove('modal-open');
-                    }, 300);
-                });
-                
-                checkoutPrompt.querySelector('.go-to-checkout').addEventListener('click', () => {
-                    window.location.href = 'checkout.php';
-                });
+                    modal.remove();
+                    document.body.classList.remove('modal-open');
+                }, 300);
             });
         });
     });
