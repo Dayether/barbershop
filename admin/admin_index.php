@@ -7,7 +7,7 @@ require_once '../database.php';
 $db = new Database();
 
 // Use Database methods for authentication and admin check
-if (!$db->isUserLoggedIn() || !$db->isUserAdmin($_SESSION['user']['user_id'])) {
+if (!$db->isUserLoggedIn() || (!($db->isUserAdmin($_SESSION['user']['user_id']) || $db->isUserSuperAdmin($_SESSION['user']['user_id'])))) {
     header("Location: ../login.php");
     exit();
 }
@@ -53,6 +53,9 @@ include 'includes/header.php';
                 break;
             case 'services':
                 include 'pages/services.php';
+                break;
+            case 'users':
+                include 'pages/users.php';
                 break;
             default:
                 include 'pages/dashboard.php';

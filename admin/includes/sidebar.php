@@ -79,6 +79,18 @@
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </li>
+            <?php
+            require_once '../database.php';
+            $dbase = new Database();
+            $isSuperAdmin = isset($_SESSION['user']) && $dbase->isUserSuperAdmin($_SESSION['user']['user_id']);
+            ?>
+            <?php if ($isSuperAdmin): ?>
+            <li class="<?php echo $page == 'users' ? 'active' : ''; ?>">
+                <a href="admin_index.php?page=users">
+                    <i class="fas fa-users-cog"></i> Manage Users
+                </a>
+            </li>
+            <?php endif; ?>
         </ul>
     </div>
 </div>
