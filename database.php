@@ -2062,12 +2062,12 @@ class Database {
     }
 
     public function updateService($data) {
-        $result = ['success' => false, 'error_message' => ''];
+        $result = ['success' => false, 'error_message' => '', 'image' => ''];
         try {
             // Handle image upload if provided
             $imagePath = '';
             if (!empty($data['image']) && isset($data['image']['tmp_name']) && is_uploaded_file($data['image']['tmp_name'])) {
-                $uploadDir = 'uploads/services/';
+                $uploadDir = '../uploads/services/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
@@ -2075,6 +2075,10 @@ class Database {
                 $filename = uniqid('service_', true) . '.' . $ext;
                 $imagePath = $uploadDir . $filename;
                 move_uploaded_file($data['image']['tmp_name'], $imagePath);
+            } else {
+                // Fetch current image if no new image uploaded
+                $current = $this->getServiceById($data['service_id']);
+                $imagePath = $current ? $current['image'] : '';
             }
 
             if ($imagePath) {
@@ -2104,6 +2108,7 @@ class Database {
 
             if ($stmt->execute()) {
                 $result['success'] = true;
+                $result['image'] = $imagePath;
             } else {
                 $result['error_message'] = $stmt->error;
             }

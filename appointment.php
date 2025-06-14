@@ -145,14 +145,8 @@ try {
                                 <div class="service-option">
                                     <input type="radio" name="service_id" id="service-<?php echo $service['service_id']; ?>" value="<?php echo $service['service_id']; ?>" data-duration="<?php echo htmlspecialchars($service['duration']); ?>" data-price="<?php echo htmlspecialchars($service['price']); ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
                                     <label for="service-<?php echo $service['service_id']; ?>">
-                                        <div class="product-image">
-                                            <?php
-                                            // Use the same logic as shop.php/products admin for image path
-                                            $imgPath = (!empty($service['image']) && file_exists($service['image'])) 
-                                                ? $service['image'] 
-                                                : 'images/service-placeholder.jpg';
-                                            ?>
-                                            <img src="<?php echo htmlspecialchars($imgPath); ?>" alt="<?php echo htmlspecialchars($service['name']); ?>">
+                                        <div class="service-image">
+                                            <img src="<?= !empty($service['image']) ? 'uploads/services/' . basename($service['image']) : 'uploads/services/service-placeholder.jpg' ?>" alt="<?= htmlspecialchars($service['name']) ?>">
                                         </div>
                                         <div class="service-icon"><i class="fas fa-cut"></i></div>
                                         <div class="service-details">
