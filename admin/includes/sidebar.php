@@ -64,6 +64,11 @@
                     ?>
                 </a>
             </li>
+            <li class="<?php echo $page == 'services' ? 'active' : ''; ?>">
+                <a href="admin_index.php?page=services">
+                    <i class="fas fa-concierge-bell"></i> Services
+                </a>
+            </li>
             <li>
                 <a href="../index.php" target="_blank">
                     <i class="fas fa-external-link-alt"></i> View Website

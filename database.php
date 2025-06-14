@@ -1994,4 +1994,173 @@ class Database {
         return ['success' => $success, 'error_message' => $error_message];
     }
 
+    public function countServices() {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM services");
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        return (int)$result['total'];
+    }
+
+    // Get paginated list of services
+    public function getServices($limit, $offset) {
+        $stmt = $this->conn->prepare("SELECT * FROM services ORDER BY service_id DESC LIMIT ? OFFSET ?");
+        $stmt->bind_param("ii", $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $services = [];
+        while ($row = $result->fetch_assoc()) {
+            $services[] = $row;
+        }
+        return $services;
+    }
+
+    // Get a single service by ID
+    public function getServiceById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM services WHERE service_id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function createService($data) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            // Handle image upload if provided
+            $imagePath = '';
+            if (!empty($data['image']) && isset($data['image']['tmp_name']) && is_uploaded_file($data['image']['tmp_name'])) {
+                $uploadDir = 'uploads/services/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $ext = pathinfo($data['image']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('service_', true) . '.' . $ext;
+                $imagePath = $uploadDir . $filename;
+                move_uploaded_file($data['image']['tmp_name'], $imagePath);
+            }
+
+            $stmt = $this->conn->prepare("INSERT INTO services (name, description, duration, price, image, active) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param(
+                "ssidsi",
+                $data['name'],
+                $data['description'],
+                $data['duration'],
+                $data['price'],
+                $imagePath,
+                $data['active']
+            );
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
+        }
+        return $result;
+    }
+
+    public function updateService($data) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            // Handle image upload if provided
+            $imagePath = '';
+            if (!empty($data['image']) && isset($data['image']['tmp_name']) && is_uploaded_file($data['image']['tmp_name'])) {
+                $uploadDir = 'uploads/services/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $ext = pathinfo($data['image']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('service_', true) . '.' . $ext;
+                $imagePath = $uploadDir . $filename;
+                move_uploaded_file($data['image']['tmp_name'], $imagePath);
+            }
+
+            if ($imagePath) {
+                $stmt = $this->conn->prepare("UPDATE services SET name=?, description=?, duration=?, price=?, image=?, active=? WHERE service_id=?");
+                $stmt->bind_param(
+                    "ssidsii",
+                    $data['name'],
+                    $data['description'],
+                    $data['duration'],
+                    $data['price'],
+                    $imagePath,
+                    $data['active'],
+                    $data['service_id']
+                );
+            } else {
+                $stmt = $this->conn->prepare("UPDATE services SET name=?, description=?, duration=?, price=?, active=? WHERE service_id=?");
+                $stmt->bind_param(
+                    "ssidsi",
+                    $data['name'],
+                    $data['description'],
+                    $data['duration'],
+                    $data['price'],
+                    $data['active'],
+                    $data['service_id']
+                );
+            }
+
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
+        }
+        return $result;
+    }
+
+    public function deleteService($service_id) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM services WHERE service_id = ?");
+            $stmt->bind_param("i", $service_id);
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
+        }
+        return $result;
+    }
+
+    public function updateServiceStatus($service_id, $active) {
+        $result = ['success' => false, 'error_message' => ''];
+        try {
+            $stmt = $this->conn->prepare("UPDATE services SET active = ? WHERE service_id = ?");
+            $stmt->bind_param("ii", $active, $service_id);
+            if ($stmt->execute()) {
+                $result['success'] = true;
+            } else {
+                $result['error_message'] = $stmt->error;
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $result['error_message'] = $e->getMessage();
+        }
+        return $result;
+    }
+
+    public function getActiveServices() {
+        $stmt = $this->conn->prepare("SELECT service_id, name, description, duration, price, image FROM services WHERE active = 1 ORDER BY name ASC, service_id ASC");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $services = [];
+        while ($row = $result->fetch_assoc()) {
+            // Optionally, check if file exists and set default if not
+            if (empty($row['image']) || !file_exists($row['image'])) {
+                $row['image'] = 'images/services/default.jpg';
+            }
+            $services[] = $row;
+        }
+        return $services;
+    }
 }
+?>

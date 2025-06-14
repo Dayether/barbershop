@@ -51,6 +51,9 @@ include 'includes/header.php';
             case 'profile':
                 include 'pages/profile.php';
                 break;
+            case 'services':
+                include 'pages/services.php';
+                break;
             default:
                 include 'pages/dashboard.php';
                 break;

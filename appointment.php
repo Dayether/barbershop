@@ -21,16 +21,15 @@ try {
     $stmt->execute();
     $activeBarbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get all unique active services (no duplicates by name)
+    // Get all active services (no deduplication)
     $stmt = $db->prepare("SELECT service_id, name, description, duration, price, image FROM services WHERE active = 1 ORDER BY name ASC, service_id ASC");
     $stmt->execute();
-    $allServices = [];
-    $serviceNames = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $service) {
-        if (!in_array($service['name'], $serviceNames)) {
-            $allServices[] = $service;
-            $serviceNames[] = $service['name'];
-        }
+    $allServices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Build a PHP associative array for service lookup by ID
+    $serviceMap = [];
+    foreach ($allServices as $service) {
+        $serviceMap[$service['service_id']] = $service;
     }
 } catch (PDOException $e) {
     $activeBarbers = [];
@@ -146,8 +145,14 @@ try {
                                 <div class="service-option">
                                     <input type="radio" name="service_id" id="service-<?php echo $service['service_id']; ?>" value="<?php echo $service['service_id']; ?>" data-duration="<?php echo htmlspecialchars($service['duration']); ?>" data-price="<?php echo htmlspecialchars($service['price']); ?>" <?php echo $i === 0 ? 'checked' : ''; ?>>
                                     <label for="service-<?php echo $service['service_id']; ?>">
-                                        <div class="service-image">
-                                            <img src="<?php echo !empty($service['image']) ? htmlspecialchars($service['image']) : 'images/services/default.jpg'; ?>" alt="<?php echo htmlspecialchars($service['name']); ?>">
+                                        <div class="product-image">
+                                            <?php
+                                            // Use the same logic as shop.php/products admin for image path
+                                            $imgPath = (!empty($service['image']) && file_exists($service['image'])) 
+                                                ? $service['image'] 
+                                                : 'images/service-placeholder.jpg';
+                                            ?>
+                                            <img src="<?php echo htmlspecialchars($imgPath); ?>" alt="<?php echo htmlspecialchars($service['name']); ?>">
                                         </div>
                                         <div class="service-icon"><i class="fas fa-cut"></i></div>
                                         <div class="service-details">
@@ -671,27 +676,28 @@ try {
                 return baseSlots.filter(() => Math.random() > 0.3);
             }
 
+            // Add PHP service map as a JS object for lookup
+            const serviceMap = <?php echo json_encode($serviceMap); ?>;
+
             // Update summary before confirmation
             function updateSummary() {
                 const selectedService = document.querySelector('input[name="service_id"]:checked');
-                // Get service name from the label text or dataset
                 let serviceName = '';
-                if (selectedService) {
-                    // Try to get the label's h4 text (service name)
-                    const label = document.querySelector('label[for="' + selectedService.id + '"]');
-                    if (label) {
-                        const h4 = label.querySelector('h4');
-                        if (h4) {
-                            serviceName = h4.textContent.trim();
-                        }
-                    }
+                let servicePrice = '';
+                let serviceDuration = '';
+                let serviceDesc = '';
+                let serviceImage = '';
+                if (selectedService && serviceMap[selectedService.value]) {
+                    const svc = serviceMap[selectedService.value];
+                    serviceName = svc.name;
+                    servicePrice = svc.price;
+                    serviceDuration = svc.duration;
+                    serviceDesc = svc.description;
+                    serviceImage = svc.image;
                 }
-                const servicePrice = selectedService ? selectedService.dataset.price : '0';
-                
+
                 const appointmentDate = document.getElementById('appointment-date').value;
                 const appointmentTime = document.querySelector('input[name="appointment-time"]:checked')?.value || '';
-                
-                // Get barber name from select option text
                 const barberSelect = document.getElementById('barber_id');
                 let barber = 'Any Available Barber';
                 if (barberSelect && barberSelect.value) {
@@ -704,8 +710,7 @@ try {
                 const email = document.getElementById('email').value;
                 const phone = document.getElementById('phone').value;
                 const notes = document.getElementById('notes').value;
-                
-                // Update the summary sections
+
                 document.getElementById('summary-service').textContent = serviceName;
                 document.getElementById('summary-date').textContent = appointmentDate;
                 document.getElementById('summary-time').textContent = appointmentTime;
@@ -713,15 +718,15 @@ try {
                 document.getElementById('summary-name').textContent = name;
                 document.getElementById('summary-email').textContent = email;
                 document.getElementById('summary-phone').textContent = phone;
-                
+
                 if (notes) {
                     document.getElementById('summary-notes').textContent = notes;
                     document.getElementById('summary-notes-container').style.display = 'flex';
                 } else {
                     document.getElementById('summary-notes-container').style.display = 'none';
                 }
-                
-                document.getElementById('summary-price').textContent = `$${servicePrice}`;
+
+                document.getElementById('summary-price').textContent = `$${parseFloat(servicePrice).toFixed(2)}`;
             }
             
             // Email validation function
@@ -846,4 +851,5 @@ try {
     }
     ?>
 </body>
+</html>
 </html>
