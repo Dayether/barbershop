@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$formError) {
         try {
             $db = new Database();
-            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+            $user_id = isset($_SESSION['user']['user_id']) ? $_SESSION['user']['user_id'] : null;
             $result = $db->insertContactMessage($name, $email, $phone, $subject, $message, $user_id);
             if ($result['success']) {
                 $name = $email = $phone = $subject = $message = "";
