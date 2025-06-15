@@ -350,37 +350,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const strengthMeter = document.querySelector('.password-strength');
                 const strengthFill = document.querySelector('.password-strength-meter-fill');
                 const strengthText = document.querySelector('.password-strength-text');
-                
+
                 // Reset previous classes
                 strengthMeter.className = 'password-strength';
-                
+
                 if (!value) {
                     setInvalid(passwordInput, 'Password is required');
                     strengthText.textContent = '';
                     strengthFill.style.width = '0%';
                     return false;
-                } 
-                
-                // Check password strength
-                let strength = 0;
-                
-                // Length check
-                if (value.length >= 8) strength += 1;
-                if (value.length >= 12) strength += 1;
-                
-                // Complexity checks
-                if (/[A-Z]/.test(value)) strength += 1;  // Has uppercase
-                if (/[a-z]/.test(value)) strength += 1;  // Has lowercase
-                if (/[0-9]/.test(value)) strength += 1;  // Has number
-                if (/[^A-Za-z0-9]/.test(value)) strength += 1;  // Has special character
-                
-                // Set strength indicator
+                }
+
+                // Check password requirements
                 if (value.length < 8) {
                     setInvalid(passwordInput, 'Password must be at least 8 characters');
                     strengthMeter.classList.add('strength-weak');
                     strengthText.textContent = 'Too short';
                     return false;
-                } else if (strength < 3) {
+                }
+                if (!/[A-Z]/.test(value)) {
+                    setInvalid(passwordInput, 'Password must contain at least one uppercase letter');
+                    strengthMeter.classList.add('strength-weak');
+                    strengthText.textContent = 'Missing uppercase letter';
+                    return false;
+                }
+                if (!/[0-9]/.test(value)) {
+                    setInvalid(passwordInput, 'Password must contain at least one number');
+                    strengthMeter.classList.add('strength-weak');
+                    strengthText.textContent = 'Missing number';
+                    return false;
+                }
+
+                // Check password strength
+                let strength = 0;
+                if (value.length >= 8) strength += 1;
+                if (value.length >= 12) strength += 1;
+                if (/[A-Z]/.test(value)) strength += 1;
+                if (/[a-z]/.test(value)) strength += 1;
+                if (/[0-9]/.test(value)) strength += 1;
+                if (/[^A-Za-z0-9]/.test(value)) strength += 1;
+
+                // Set strength indicator
+                if (strength < 3) {
                     setValid(passwordInput);
                     strengthMeter.classList.add('strength-weak');
                     strengthText.textContent = 'Weak';
