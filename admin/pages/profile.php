@@ -116,25 +116,9 @@ if ($redirect_needed) {
                 <div class="profile-sidebar">
                     <div class="profile-image-container">
                         <div class="profile-image">
+                            
                             <img src="<?php echo !empty($user['profile_pic']) ? '../' . $user['profile_pic'] : '../uploads/default-profile.jpg'; ?>" alt="Profile Picture">
-                            <div class="image-overlay">
-                                <form id="avatar-form" method="POST" enctype="multipart/form-data">
-                                    <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display: none;">
-                                    <label for="profile_pic" class="upload-btn">
-                                        <i class="fas fa-camera"></i>
-                                        <span>Change Photo</span>
-                                    </label>
-                                </form>
-                                <?php if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'uploads/default-profile.jpg'): ?>
-                                <a href="?page=profile&delete_picture=1" 
-                                   class="delete-btn remove-photo-btn" 
-                                   data-confirm="Are you sure you want to remove your profile picture? This will reset to the default image."
-                                   data-confirm-title="Remove Profile Picture">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Remove Photo</span>
-                                </a>
-                                <?php endif; ?>
-                            </div>
+                            
                         </div>
                     </div>
                     <div class="profile-details">
