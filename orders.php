@@ -454,7 +454,17 @@ unset($order); // break reference
                                 <?php foreach ($order['items'] as $item): ?>
                                     <div class="order-item">
                                         <div class="order-item-image">
-                                            <img src="<?= htmlspecialchars($item['image'] ?: 'images/product-placeholder.jpg') ?>" alt="<?= htmlspecialchars($item['name']) ?>">
+                                            <?php
+                                            // Use product_image from DB if available, fallback to item['image'] or placeholder
+                                            $img = !empty($item['product_image']) ? $item['product_image'] : (!empty($item['image']) ? $item['image'] : 'images/product-placeholder.jpg');
+                                            // If not an absolute path, prepend uploads/products/
+                                            if (!empty($item['product_image']) && strpos($item['product_image'], 'uploads/') === false && strpos($item['product_image'], 'images/') === false) {
+                                                $img = 'uploads/products/' . $item['product_image'];
+                                            }
+                                            // Remove any leading ../ from the path for web display
+                                            $img = preg_replace('/^\.\.\//', '', $img);
+                                            ?>
+                                            <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
                                         </div>
                                         <div class="order-item-details">
                                             <div class="order-item-name">
