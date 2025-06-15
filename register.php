@@ -93,6 +93,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css">
+    <style>
+        /* Fix password field eye icon alignment */
+        .password-field {
+            position: relative;
+        }
+        .password-field .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            z-index: 2;
+            color: #888;
+            font-size: 1.1em;
+            height: 2em;
+            width: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-field .form-control {
+            padding-right: 2.5em !important; /* Space for validation icon */
+        }
+        /* Vertically center and right-align validation icons in password field */
+        .password-field .form-control.is-valid,
+        .password-field .form-control.is-invalid {
+            background-position:
+                right 0.75em center; /* right edge, vertically centered */
+            background-size: 1.25em 1.25em;
+        }
+        /* Optional: Remove background color on icon overlap */
+        /*
+        .password-field .form-control.is-valid:focus,
+        .password-field .form-control.is-invalid:focus {
+            background-color: #fff;
+        }
+        */
+        /* Prevent feedback icons from overlapping the eye icon */
+        .password-field .is-valid,
+        .password-field .is-invalid {
+            background-position-x: calc(100% - 2.5em);
+        }
+    </style>
 </head>
 <body>
     <section class="auth-section">
@@ -151,9 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-floating password-field">
                             <input type="password" name="password" id="password" class="form-control" placeholder=" " required>
                             <label for="password" class="form-label">Password</label>
-                            <button type="button" class="toggle-password">
-                                <i class="far fa-eye"></i>
-                            </button>
+                       
                             <div class="invalid-feedback">Password must be at least 8 characters long.</div>
                             <div class="valid-feedback">Strong password!</div>
                             <div class="password-strength">
