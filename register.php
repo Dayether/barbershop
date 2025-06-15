@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/validation.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css">
 </head>
 <body>
     <section class="auth-section">
@@ -121,10 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h2>Create Account</h2>
                         <p>Sign up to get started with Tipuno</p>
                     </div>
-                    
-                    <?php if ($error): ?>
-                        <div class="alert alert-danger"><?= $error ?></div>
-                    <?php endif; ?>
                     
                     <form method="post" class="auth-form" id="registration-form" novalidate>
                         <div class="form-floating">
@@ -186,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </section>
 
+    <script src="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Password visibility toggle
@@ -440,6 +438,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (document.getElementById('first_name').value) validateFirstName();
             if (document.getElementById('last_name').value) validateLastName();
             if (document.getElementById('email').value) validateEmail();
+            
+            // Toast for server-side errors (e.g., password uppercase, terms)
+            <?php if ($error): ?>
+            iziToast.error({
+                title: 'Registration Error',
+                message: <?= json_encode(strip_tags($error)) ?>,
+                position: 'topRight',
+                timeout: 4000
+            });
+            <?php endif; ?>
         });
     </script>
 </body>
