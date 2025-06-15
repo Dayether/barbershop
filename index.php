@@ -136,7 +136,7 @@ require_once 'database.php';
             <div class="services-grid">
                 <div class="service-card" data-aos="fade-up" data-aos-delay="100">
                     <div class="service-image">
-                        <img src="images/haircut-service.jpg" alt="Professional Haircut">
+                        <img src="images/precised-haircut.jpg" alt="Professional Haircut">
                         <div class="service-price">from $30</div>
                     </div>
                     <div class="service-content">

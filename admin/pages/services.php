@@ -149,7 +149,7 @@ if (isset($_GET['new'])) {
                         <div class="image-upload-container">
                             <?php if (!empty($service['image'])): ?>
                                 <div class="current-image">
-                                    <img src="../<?php echo htmlspecialchars($service['image']); ?>" alt="<?php echo htmlspecialchars($service['name']); ?>" id="imagePreview">
+                                    <img src="<?php echo htmlspecialchars($service['image']); ?>" alt="<?php echo htmlspecialchars($service['name']); ?>" id="imagePreview">
                                 </div>
                             <?php else: ?>
                                 <div class="no-image" id="imagePreview">
