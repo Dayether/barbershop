@@ -278,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let emailCheckTimer;
             function checkEmailExists(email, inputElement) {
                 clearTimeout(emailCheckTimer);
-                inputElement.classList.remove('is-valid', 'is-invalid');
+                inputElement.classList.remove('is-valid', 'is-invalid', 'is-validating');
                 inputElement.classList.add('is-validating');
                 const invalidFeedback = inputElement.nextElementSibling.nextElementSibling;
                 const validFeedback = invalidFeedback.nextElementSibling;
@@ -289,9 +289,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             inputElement.classList.remove('is-validating');
                             if (data.valid) {
                                 setValid(inputElement);
-                                if (validFeedback) validFeedback.textContent = data.message;
+                                if (validFeedback) {
+                                    validFeedback.style.display = 'block';
+                                    validFeedback.textContent = data.message;
+                                }
+                                if (invalidFeedback) invalidFeedback.style.display = 'none';
                             } else {
                                 setInvalid(inputElement, data.message);
+                                if (validFeedback) validFeedback.style.display = 'none';
+                                if (invalidFeedback) invalidFeedback.style.display = 'block';
                             }
                         })
                         .catch(() => {
@@ -403,8 +409,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!value) {
                     setInvalid(this, 'Email address is required');
+                    const validFeedback = this.nextElementSibling.nextElementSibling.nextElementSibling;
+                    if (validFeedback) validFeedback.style.display = 'none';
                 } else if (!emailPattern.test(value)) {
                     setInvalid(this, 'Please enter a valid email address');
+                    const validFeedback = this.nextElementSibling.nextElementSibling.nextElementSibling;
+                    if (validFeedback) validFeedback.style.display = 'none';
                 } else {
                     // Only trigger AJAX check if valid format
                     checkEmailExists(value, this);
