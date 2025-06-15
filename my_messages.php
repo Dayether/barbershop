@@ -44,7 +44,7 @@ $stmt->close();
 <body>
 <?php include 'includes/header.php'; ?>
 
-<section class="page-banner">
+<section class="page">
     <div class="container">
         <h1>My Messages</h1>
         <p>View and manage your sent messages.</p>
