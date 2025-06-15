@@ -66,7 +66,7 @@ try {
             <div class="services-category active" id="haircuts">
                 <div class="service-item" data-aos="fade-right">
                     <div class="service-image video-container">
-                        <video class="service-video" controls poster="images/haircut-thumb.jpg">
+                        <video class="service-video" controls poster="images/haircut-thumb.jpg" autoplay muted >
                             <source src="uploads/haircuts-video.mp4" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
