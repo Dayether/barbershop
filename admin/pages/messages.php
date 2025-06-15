@@ -348,6 +348,29 @@ if ($viewMode === 'list') {
 </div>
 <?php endif; ?>
 
+<?php
+// After PHP opening tag and before any HTML output
+if (isset($_SESSION['toast_message'])) {
+    echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+    echo '<script>document.addEventListener("DOMContentLoaded", function() {';
+    echo 'Swal.fire({';
+    echo 'icon: "' . ($_SESSION['toast_type'] === 'success' ? 'success' : 'error') . '",';
+    echo 'title: "' . addslashes($_SESSION['toast_title']) . '",';
+    echo 'text: "' . addslashes($_SESSION['toast_message']) . '",';
+    echo 'position: "top",';
+    echo 'showConfirmButton: false,';
+    echo 'timer: 3000,';
+    echo 'timerProgressBar: true,';
+    echo 'customClass: { popup: "swal2-toast-custom" }';
+    echo '});';
+    echo '});</script>';
+    echo '<style>.swal2-toast-custom { font-size: 1.15em !important; font-weight: 600 !important; letter-spacing: 0.5px; border-radius: 8px !important; padding: 18px 30px !important; }</style>';
+    unset($_SESSION['toast_message']);
+    unset($_SESSION['toast_type']);
+    unset($_SESSION['toast_title']);
+}
+?>
+
 <style>
 /* Messages specific styling */
 .message-container {

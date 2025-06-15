@@ -72,15 +72,35 @@ document.addEventListener('DOMContentLoaded', function() {
     iziToast.<?php echo $_SESSION['toast_type']; ?>({
         title: '<?php echo $_SESSION['toast_title']; ?>',
         message: '<?php echo $_SESSION['toast_message']; ?>',
-        position: 'topRight',
+        position: 'topCenter',
         timeout: 5000,
         progressBar: true,
         closeOnClick: true,
         overlay: false,
-        displayMode: 'once'
+        displayMode: 'once',
+        transitionIn: 'fadeInDown',
+        transitionOut: 'fadeOutUp',
+        icon: '<?php echo $_SESSION['toast_type'] === 'success' ? 'fa fa-check-circle' : 'fa fa-times-circle'; ?>',
+        backgroundColor: '<?php echo $_SESSION['toast_type'] === 'success' ? '#43a047' : '#e53935'; ?>',
+        titleColor: '#fff',
+        messageColor: '#fff',
+        iconColor: '#fff',
+        class: 'custom-izi-toast',
+        drag: false,
+        zindex: 99999,
     });
 });
 </script>
+<style>
+.custom-izi-toast {
+    font-size: 1.15em !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 32px rgba(0,0,0,0.18) !important;
+    border-radius: 8px !important;
+    padding: 18px 30px !important;
+}
+</style>
 <?php
     // Clear the toast message after displaying it
     unset($_SESSION['toast_message']);
