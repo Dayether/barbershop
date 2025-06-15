@@ -117,17 +117,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 placeholder=" " value="<?= htmlspecialchars($email) ?>" required>
                             <label for="email" class="form-label">Email Address</label>
                             <div class="invalid-feedback">Please enter a valid email address.</div>
-                            <div class="valid-feedback">Looks good!</div>
                         </div>
                         
                         <div class="form-floating password-field">
                             <input type="password" name="password" id="password" class="form-control" placeholder=" " required>
                             <label for="password" class="form-label">Password</label>
-                            <button type="button" class="toggle-password">
+                            <button type="button" class="toggle-password" style="display:none;">
                                 <i class="far fa-eye"></i>
                             </button>
                             <div class="invalid-feedback">Please enter your password.</div>
-                            <div class="valid-feedback">Looks good!</div>
                         </div>
                         
                         <div class="form-check">
@@ -155,8 +153,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const togglePassword = document.querySelector('.toggle-password');
             const password = document.querySelector('#password');
             
+            // Show/hide eye icon based on password field content
+            function updateEyeIcon() {
+                if (password.value.length > 0) {
+                    togglePassword.style.display = '';
+                } else {
+                    togglePassword.style.display = 'none';
+                    password.setAttribute('type', 'password');
+                    const eyeIcon = togglePassword.querySelector('i');
+                    eyeIcon.classList.remove('fa-eye-slash');
+                    eyeIcon.classList.add('fa-eye');
+                }
+            }
+            password.addEventListener('input', updateEyeIcon);
+            updateEyeIcon(); // Initial state
+            
             if (togglePassword) {
                 togglePassword.addEventListener('click', function() {
+                    if (password.value.length === 0) return;
                     const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                     password.setAttribute('type', type);
                     
@@ -183,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setInvalid(emailInput, 'Please enter a valid email address');
                     return false;
                 } else {
-                    setValid(emailInput);
+                    emailInput.classList.remove('is-invalid');
                     return true;
                 }
             }
@@ -197,14 +211,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setInvalid(passwordInput, 'Password is required');
                     return false;
                 } else {
-                    setValid(passwordInput);
+                    passwordInput.classList.remove('is-invalid');
                     return true;
                 }
             }
             
             // Helper functions for validation UI
             function setInvalid(input, message) {
-                input.classList.remove('is-valid');
                 input.classList.add('is-invalid');
                 
                 // Update feedback message if provided
@@ -212,11 +225,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (feedback && feedback.classList.contains('invalid-feedback') && message) {
                     feedback.textContent = message;
                 }
-            }
-            
-            function setValid(input) {
-                input.classList.remove('is-invalid');
-                input.classList.add('is-valid');
             }
             
             // Real-time validation on input

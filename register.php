@@ -175,18 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <button type="submit" class="btn-auth">Create Account</button>
                         
-                        <div class="auth-divider">
-                            <span>or sign up with</span>
-                        </div>
                         
-                        <div class="social-buttons">
-                            <button type="button" class="btn-social btn-google">
-                                <i class="fab fa-google"></i> Google
-                            </button>
-                            <button type="button" class="btn-social btn-facebook">
-                                <i class="fab fa-facebook-f"></i> Facebook
-                            </button>
-                        </div>
                         
                         <div class="auth-footer">
                             <p>Already have an account? <a href="login.php">Login</a></p>
