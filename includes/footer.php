@@ -107,9 +107,9 @@
                     <p>&copy; <?php echo date('Y'); ?> Tipuno Barbershop. All rights reserved.</p>
                 </div>
                 <div class="footer-legal">
-                    <a href="privacy-policy.php">Privacy Policy</a>
+                    <a href="privacy.php">Privacy Policy</a>
                     <a href="terms-of-service.php">Terms of Service</a>
-                    <a href="sitemap.php">Sitemap</a>
+                   
                 </div>
             </div>
         </div>

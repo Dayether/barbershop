@@ -166,7 +166,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div class="form-check">
                             <input type="checkbox" id="terms" name="terms" class="form-check-input" required>
-                            <label for="terms" class="form-check-label">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                            <label for="terms" class="form-check-label">
+                                I agree to the 
+                                <a href="terms-of-service.php?from=register.php">Terms of Service</a> and 
+                                <a href="privacy.php?from=register.php">Privacy Policy</a>
+                            </label>
                             <div class="invalid-feedback">You must agree to the terms and conditions.</div>
                         </div>
                         
