@@ -178,9 +178,7 @@ foreach ($appointments as $appointment) {
                                     </div>
                                 </div>
                                 <div class="appointment-service">
-                                    <div class="service-icon">
-                                        <i class="fas fa-cut"></i>
-                                    </div>
+                                    
                                     <div class="service-details">
                                         <span class="service-label">Service</span>
                                         <span class="service-value"><?php echo htmlspecialchars($appointment['service_name'] ?? 'N/A'); ?></span>
