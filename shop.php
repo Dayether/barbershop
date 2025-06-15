@@ -66,6 +66,7 @@ if (count($products) == 0) {
     <link rel="stylesheet" href="css/color-themes.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/hamburger.css">
 </head>
 <body data-page-type="shop">
     <?php include 'includes/header.php'; ?>

@@ -56,6 +56,7 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_gold.css">
     <!-- Add iziToast CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <link rel="stylesheet" href="css/hamburger.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>

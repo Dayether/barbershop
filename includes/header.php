@@ -12,6 +12,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 <img src="uploads/tipuno.jpg" alt="Tipuno Barbershop" class="logo-img">
             </a>
             
+            <!-- Hamburger Button -->
+            <div class="hamburger" id="hamburgerBtn">
+                <span style="height:4px;background:#333;border-radius:2px;width:100%;display:block;margin-bottom:4px;"></span>
+                <span style="height:4px;background:#333;border-radius:2px;width:100%;display:block;margin-bottom:4px;"></span>
+                <span style="height:4px;background:#333;border-radius:2px;width:100%;display:block;"></span>
+            </div>
+
             <ul class="nav-menu">
                 <li><a href="index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>">Home</a></li>
                 <li><a href="services.php" class="<?= basename($_SERVER['PHP_SELF']) == 'services.php' ? 'active' : '' ?>">Services</a></li>
