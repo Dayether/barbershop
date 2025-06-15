@@ -174,7 +174,7 @@ INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `email`, `password`, 
 --
 
 CREATE TABLE `contact_messages` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `contact_message_id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
@@ -184,7 +184,7 @@ CREATE TABLE `contact_messages` (
   `reply` text DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'new',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`contact_message_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `fk_contact_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -193,7 +193,7 @@ CREATE TABLE `contact_messages` (
 -- Dumping data for table `contact_messages`
 --
 
-INSERT INTO `contact_messages` (`id`, `name`, `email`, `phone`, `subject`, `message`, `status`, `created_at`) VALUES
+INSERT INTO `contact_messages` (`contact_message_id`, `name`, `email`, `phone`, `subject`, `message`, `status`, `created_at`) VALUES
 (3, 'ALEA SHANE ALCANTARA', 'alcantaraivan2003@gmail.com', '09911776722', 'wewewe', 'asdasd', 'new', '2025-05-13 14:17:01'),
 (4, 'ALEA SHANE ALCANTARA', 'alcantaraivan2003@gmail.com', '09911776722', 'wewewe', 'asdasd', 'new', '2025-05-13 14:20:26'),
 (5, 'ALEA SHANE ALCANTARA', 'alcantaraivan2003@gmail.com', '09911776722', 'wewewe', 'asdasd', 'new', '2025-05-13 14:25:02'),
@@ -400,7 +400,7 @@ ALTER TABLE `barbers`
 -- Indexes for table `contact_messages`
 --
 ALTER TABLE `contact_messages`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`contact_message_id`);
 
 --
 -- Indexes for table `orders`
@@ -468,7 +468,7 @@ ALTER TABLE `barbers`
 -- AUTO_INCREMENT for table `contact_messages`
 --
 ALTER TABLE `contact_messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `contact_message_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `orders`

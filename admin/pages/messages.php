@@ -1,4 +1,7 @@
 <?php
+
+
+
 require_once '../database.php';
 require_once 'includes/notifications.php';
 
@@ -11,16 +14,16 @@ $successMsg = '';
 
 // Handle admin reply submission
 if (isset($_POST['submit_reply']) && isset($_POST['message_id'])) {
-    $id = (int)$_POST['message_id'];
+    $contact_message_id = (int)$_POST['message_id'];
     $reply = trim($_POST['reply']);
     if ($reply !== '') {
-        $stmt = $db->conn->prepare("UPDATE contact_messages SET reply = ? WHERE id = ?");
-        $stmt->bind_param("si", $reply, $id);
+        $stmt = $db->conn->prepare("UPDATE contact_messages SET reply = ? WHERE contact_message_id = ?");
+        $stmt->bind_param("si", $reply, $contact_message_id);
         $success = $stmt->execute();
         $stmt->close();
         if ($success) {
             setSuccessToast("Reply sent and saved successfully.");
-            header("Location: ?page=messages&view=" . $id);
+            header("Location: ?page=messages&view=" . $contact_message_id);
             exit();
         } else {
             setErrorToast("Failed to save reply.");
@@ -32,13 +35,13 @@ if (isset($_POST['submit_reply']) && isset($_POST['message_id'])) {
 
 // Update message status (mark as read/unread)
 if (isset($_POST['update_status'])) {
-    $id = (int)$_POST['message_id'];
+    $contact_message_id = (int)$_POST['message_id'];
     $status = $_POST['status'];
-    $result = $db->updateMessageStatus($id, $status);
+    $result = $db->updateMessageStatus($contact_message_id, $status);
     if ($result['success']) {
         setSuccessToast("Message marked as " . $status);
         // Redirect to the same view page to refresh status
-        header("Location: ?page=messages&view=" . $id);
+        header("Location: ?page=messages&view=" . $contact_message_id);
         exit();
     } else {
         setErrorToast($result['error_message'] ?? "Failed to update message status.");
@@ -48,8 +51,8 @@ if (isset($_POST['update_status'])) {
 // Mark as read if viewing a new message
 if (isset($_GET['view'])) {
     $viewMode = 'view';
-    $id = (int)$_GET['view'];
-    $message = $db->getMessageById($id);
+    $contact_message_id = (int)$_GET['view'];
+    $message = $db->getMessageById($contact_message_id);
     if (!$message) {
         setErrorToast("Message not found.");
         $viewMode = 'list';
@@ -58,8 +61,8 @@ if (isset($_GET['view'])) {
 
 // Delete message
 if (isset($_GET['delete']) && isset($_GET['confirm_delete'])) {
-    $id = (int)$_GET['delete'];
-    $result = $db->deleteMessage($id);
+    $contact_message_id = (int)$_GET['delete'];
+    $result = $db->deleteMessage($contact_message_id);
     if ($result['success']) {
         setSuccessToast("Message deleted successfully!");
         header("Location: ?page=messages");
@@ -93,7 +96,7 @@ if ($viewMode === 'list') {
         <div class="actions">
             <a href="?page=messages" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to List</a>
             <form method="post" style="display: inline;">
-                <input type="hidden" name="message_id" value="<?php echo $message['id']; ?>">
+                <input type="hidden" name="message_id" value="<?php echo $message['contact_message_id']; ?>">
                 <?php if ($message['status'] == 'read'): ?>
                     <input type="hidden" name="status" value="new">
                     <button type="submit" name="update_status" class="btn btn-primary btn-sm">
@@ -106,9 +109,9 @@ if ($viewMode === 'list') {
                     </button>
                 <?php endif; ?>
             </form>
-            <a href="?page=messages&delete=<?php echo $message['id']; ?>" 
+            <a href="?page=messages&delete=<?php echo $message['contact_message_id']; ?>" 
                class="btn btn-accent btn-sm delete-btn"
-               id="delete-message-<?php echo $message['id']; ?>"
+               id="delete-message-<?php echo $message['contact_message_id']; ?>"
                data-confirm="Are you sure you want to delete this message? This action cannot be undone."
                data-confirm-title="Delete Message"
                data-item-name="this message">
@@ -190,7 +193,7 @@ if ($viewMode === 'list') {
                     </div>
                 <?php else: ?>
                     <form method="post" style="margin-top:10px;">
-                        <input type="hidden" name="message_id" value="<?php echo $message['id']; ?>">
+                        <input type="hidden" name="message_id" value="<?php echo $message['contact_message_id']; ?>">
                         <textarea name="reply" rows="4" class="form-control" placeholder="Type your reply here..." required></textarea>
                         <button type="submit" name="submit_reply" class="btn btn-success" style="margin-top:10px;">Send Reply</button>
                     </form>
@@ -249,7 +252,7 @@ if ($viewMode === 'list') {
                                     </div>
                                 </td>
                                 <td>
-                                    <a href="?page=messages&view=<?php echo $message['id']; ?>" class="message-subject-link">
+                                    <a href="?page=messages&view=<?php echo $message['contact_message_id']; ?>" class="message-subject-link">
                                         <?php echo htmlspecialchars($message['subject']); ?>
                                         <span class="message-preview"><?php echo htmlspecialchars(substr($message['message'], 0, 50)) . (strlen($message['message']) > 50 ? '...' : ''); ?></span>
                                     </a>
@@ -261,8 +264,8 @@ if ($viewMode === 'list') {
                                     </div>
                                 </td>
                                 <td>
-                                    <form method="post" id="status-form-<?php echo $message['id']; ?>">
-                                        <input type="hidden" name="message_id" value="<?php echo $message['id']; ?>">
+                                    <form method="post" id="status-form-<?php echo $message['contact_message_id']; ?>">
+                                        <input type="hidden" name="message_id" value="<?php echo $message['contact_message_id']; ?>">
                                         <input type="hidden" name="status" value="<?php echo $message['status'] === 'new' ? 'read' : 'new'; ?>">
                                         <button type="submit" name="update_status" class="status-badge status-<?php echo $message['status']; ?>">
                                             <?php if ($message['status'] === 'new'): ?>
@@ -270,17 +273,16 @@ if ($viewMode === 'list') {
                                             <?php else: ?>
                                                 <i class="fas fa-envelope-open"></i> Read
                                             <?php endif; ?>
-                                        </button>
-                                    </form>
+                                        </form>
                                 </td>
                                 <td class="actions">
                                     <div class="action-buttons">
-                                        <a href="?page=messages&view=<?php echo $message['id']; ?>" class="btn btn-primary btn-sm">
+                                        <a href="?page=messages&view=<?php echo $message['contact_message_id']; ?>" class="btn btn-primary btn-sm">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="?page=messages&delete=<?php echo $message['id']; ?>" 
+                                        <a href="?page=messages&delete=<?php echo $message['contact_message_id']; ?>" 
                                            class="btn btn-accent btn-sm delete-btn"
-                                           id="delete-message-<?php echo $message['id']; ?>"
+                                           id="delete-message-<?php echo $message['contact_message_id']; ?>"
                                            data-confirm="Are you sure you want to delete this message? This action cannot be undone."
                                            data-confirm-title="Delete Message"
                                            data-item-name="this message">

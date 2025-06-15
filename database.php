@@ -1428,9 +1428,9 @@ class Database {
         return ['success' => $success, 'error_message' => $error_message];
     }
 
-    public function getMessageById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM contact_messages WHERE id = ?");
-        $stmt->bind_param("i", $id);
+    public function getMessageById($contact_message_id) {
+        $stmt = $this->conn->prepare("SELECT * FROM contact_messages WHERE contact_message_id = ?");
+        $stmt->bind_param("i", $contact_message_id);
         $stmt->execute();
         $result = $stmt->get_result();
         $message = $result->fetch_assoc();
@@ -1438,18 +1438,18 @@ class Database {
         return $message;
     }
 
-    public function updateMessageStatus($id, $status) {
-        $stmt = $this->conn->prepare("UPDATE contact_messages SET status = ? WHERE id = ?");
-        $stmt->bind_param("si", $status, $id);
+    public function updateMessageStatus($contact_message_id, $status) {
+        $stmt = $this->conn->prepare("UPDATE contact_messages SET status = ? WHERE contact_message_id = ?");
+        $stmt->bind_param("si", $status, $contact_message_id);
         $success = $stmt->execute();
         $error_message = $success ? '' : $stmt->error;
         $stmt->close();
         return ['success' => $success, 'error_message' => $error_message];
     }
 
-    public function deleteMessage($id) {
-        $stmt = $this->conn->prepare("DELETE FROM contact_messages WHERE id = ?");
-        $stmt->bind_param("i", $id);
+    public function deleteMessage($contact_message_id) {
+        $stmt = $this->conn->prepare("DELETE FROM contact_messages WHERE contact_message_id = ?");
+        $stmt->bind_param("i", $contact_message_id);
         $success = $stmt->execute();
         $error_message = $success ? '' : $stmt->error;
         $stmt->close();
@@ -1704,7 +1704,7 @@ class Database {
         $appointment_date = $data['appointment_date'];
         $appointment_time = $data['appointment_time'];
         $barber_id = !empty($data['barber_id']) ? (int)$data['barber_id'] : null;
-        $client_name = trim($data['client_name']);
+               $client_name = trim($data['client_name']);
         $client_email = trim($data['client_email']);
         $client_phone = trim($data['client_phone']);
         $notes = trim($data['notes']);
