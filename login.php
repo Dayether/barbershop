@@ -14,6 +14,7 @@ if (isset($_SESSION['user'])) {
 $error = '';
 $success = '';
 $email = '';
+$showToast = false;
 
 if (isset($_SESSION['registration_success'])) {
     $success = 'Registration successful! Please log in with your credentials.';
@@ -56,9 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             $error = 'Invalid email or password';
+            $showToast = true;
         }
     } else {
         $error = implode('<br>', $errors);
+        $showToast = true;
     }
 }
 ?>
@@ -73,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/validation.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css">
 </head>
 <body>
     <section class="auth-section">
@@ -105,10 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <?php if ($success): ?>
                         <div class="alert alert-success"><?= $success ?></div>
-                    <?php endif; ?>
-                    
-                    <?php if ($error): ?>
-                        <div class="alert alert-danger"><?= $error ?></div>
                     <?php endif; ?>
                     
                     <form method="post" class="auth-form" id="login-form" novalidate>
@@ -148,6 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </section>
 
+    <script src="https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Password visibility toggle
@@ -245,6 +246,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Initial validation to show any pre-filled fields
             if (document.getElementById('email').value) validateEmail();
+            
+            <?php if ($showToast && $error): ?>
+            iziToast.error({
+                title: 'Login Failed',
+                message: <?= json_encode(strip_tags($error)) ?>,
+                position: 'topRight',
+                timeout: 4000
+            });
+            <?php endif; ?>
         });
     </script>
 </body>
